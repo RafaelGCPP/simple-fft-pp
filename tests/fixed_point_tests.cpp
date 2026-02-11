@@ -94,6 +94,52 @@ void test_constexpr_verification() {
     std::cout << "✅ constexpr static_assert: Success" << std::endl;
 }
 
+void test_mixed_addition() {
+    std::cout << "Testing Mixed-Precision Addition (Q23 + Q31)... ";
+    Q23 a = Q23::from_double(0.5);
+    Q31 b = Q31::from_double(0.25);
+    
+    // a is the base (Q23), so result should be Q23
+    auto result = a + b; 
+    
+    if (std::abs(result.to_double() - 0.75) < 1e-7) {
+        std::cout << "✅" << std::endl;
+    } else {
+        std::cout << "❌ Got: " << result.to_double() << std::endl;
+    }
+}
+
+void test_mixed_multiplication() {
+    std::cout << "Testing Mixed-Precision Multiplication (Q23 * Q31)... ";
+    Q23 a = Q23::from_double(0.5);
+    Q31 b = Q31::from_double(0.125);
+    
+    // Result should be in the scale of 'a' (Q23)
+    auto result = a * b; 
+    
+    if (std::abs(result.to_double() - 0.0625) < 1e-7) {
+        std::cout << "✅" << std::endl;
+    } else {
+        std::cout << "❌ Got: " << result.to_double() << std::endl;
+    }
+}
+
+void test_mixed_complex() {
+    std::cout << "Testing Mixed-Precision Complex Multiply (Q23Cplx * Q31Cplx)... ";
+    // Common case for our FFT: Signal in Q23, Twiddle in Q31
+    Q23Complex signal(0.5, 0.0);
+    Q31Complex twiddle(0.0, -1.0); // -j
+    
+    auto result = signal * twiddle; // Should result in (0, -0.5) in Q23 scale
+
+    if (std::abs(result.to_double_real() - 0.0) < 1e-7 && 
+        std::abs(result.to_double_imag() - (-0.5)) < 1e-7) {
+        std::cout << "✅" << std::endl;
+    } else {
+        std::cout << "❌ Got: " << result.to_double_real() << " + " << result.to_double_imag() << "i" << std::endl;
+    }
+}
+
 int main() {
     std::cout << "--- Starting FixedPoint Unit Tests ---" << std::endl;
 
@@ -104,6 +150,9 @@ int main() {
     test_multiplication_rounding();
     test_complex_multiplication();
     test_constexpr_verification();
+    test_mixed_addition();
+    test_mixed_multiplication();
+    test_mixed_complex();
 
     std::cout << "--- FixedPoint Tests Completed ---" << std::endl;
     return 0;
