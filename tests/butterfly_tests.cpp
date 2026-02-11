@@ -57,7 +57,7 @@ void test_fixed_dif() {
 
     DIF_Butterfly<Q31Complex>::process(a, b, w);
 
-    if (is_near(a.to_double_real(), a_exp.real()) && is_near(b.to_double_real(), b_exp.real())) {
+    if (is_near((double)a.real(), a_exp.real()) && is_near((double)b.real(), b_exp.real())) {
         std::cout << "✅" << std::endl;
     } else {
         std::cout << "❌" << std::endl;
@@ -83,7 +83,7 @@ void test_fixed_dit() {
     DoubleCplx a_exp = DoubleCplx(0.8, -0.2) + b_rot;
     DoubleCplx b_exp = DoubleCplx(0.8, -0.2) - b_rot;
 
-    if (is_near(a.to_double_real(), a_exp.real()) && is_near(b.to_double_real(), b_exp.real())) {
+    if (is_near((double)a.real(), a_exp.real()) && is_near((double)b.real(), b_exp.real())) {
         std::cout << "✅" << std::endl;
     } else {
         std::cout << "❌" << std::endl;

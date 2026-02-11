@@ -8,8 +8,8 @@
 
 // Local helper for testing purposes only
 double get_abs_diff(Q31Complex actual, std::complex<double> expected) {
-    double real_diff = actual.to_double_real() - expected.real();
-    double imag_diff = actual.to_double_imag() - expected.imag();
+    double real_diff = (double) actual.real() - expected.real();
+    double imag_diff = (double) actual.imag() - expected.imag();
     return std::sqrt(real_diff * real_diff + imag_diff * imag_diff);
 }
 
@@ -17,7 +17,7 @@ double get_abs_diff(Q31Complex actual, std::complex<double> expected) {
 void print_failure(int k, std::complex<double> expected, std::complex<double> actual) {
     std::cout << "❌ Error at index k=" << k << "\n"
               << "   Expected: " << expected.real() << " + " << expected.imag() << "i\n"
-              << "   Got:      " << actual.real() << " + " << actual.imag() << "i\n"
+              << "   Got:      " << (double) actual.real() << " + " << (double) actual.imag() << "i\n"
               << "   Diff:     " << std::abs(expected - actual) << "\n\n";
 }
 
@@ -25,7 +25,7 @@ void print_failure(int k, std::complex<double> expected, std::complex<double> ac
 void print_q31_failure(int k, std::complex<double> expected, Q31Complex actual) {
     std::cout << "❌ Error at index k=" << k << "\n"
               << "   Expected: " << expected.real() << " + " << expected.imag() << "i\n"
-              << "   Got:      " << actual.to_double_real() << " + " << actual.to_double_imag() << "i\n"
+              << "   Got:      " << (double) actual.real() << " + " <<  (double) actual.imag() << "i\n"
               << "   Diff:     " << get_abs_diff(actual, expected) << "\n\n";
 }
 

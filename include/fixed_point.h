@@ -5,11 +5,12 @@
 
 /**
  * @brief A generic Fixed Point scalar type.
- * @tparam FractionalBits Number of bits used for the fractional part (e.g., 31 for Q31).
+ * @tparam B Number of bits used for the fractional part (e.g., 31 for Q31).
  */
-template <int FractionalBits>
+template <int B>
 struct FixedPoint
 {
+    static constexpr int FractionalBits = B; // Adicione isso!
     int32_t raw;
 
     // Default constructor
@@ -114,11 +115,22 @@ struct FixedPoint
         return FixedPoint(static_cast<int32_t>(rounded >> OtherFracBits));
     }
     // Support for mixed-precision multiplication could be added later
+
+    // Operador de conversão explícito para double
+    explicit constexpr operator double() const {
+        return static_cast<double>(raw) / (1LL << FractionalBits);
+    }
+
+    // Operador de conversão explícito para float
+    explicit constexpr operator float() const {
+        return static_cast<float>(raw) / (1LL << FractionalBits);
+    }
 };
 
 // Common aliases
 using Q31 = FixedPoint<31>;
 using Q23 = FixedPoint<23>;
+using Q15 = FixedPoint<15>;
 
 /**
  * @brief A generic complex number template using fixed-point types.
@@ -127,47 +139,96 @@ using Q23 = FixedPoint<23>;
 template <typename T>
 struct FixedComplex
 {
-    T real;
-    T imag;
+    T _real;
+    T _imag;
 
-    constexpr FixedComplex() : real(), imag() {}
-    constexpr FixedComplex(T r, T i) : real(r), imag(i) {}
+    constexpr FixedComplex() : _real(), _imag() {}
+    constexpr FixedComplex(T r, T i) : _real(r), _imag(i) {}
 
     // Explicitly handle construction to avoid "explicit" constructor conflicts
     constexpr FixedComplex(double r, double i)
-        : real(T::from_double(r)), imag(T::from_double(i)) {}
+        : _real(T::from_double(r)), _imag(T::from_double(i)) {}
 
     // --- Complex Arithmetic ---
     template <typename U>
     constexpr auto operator+(const FixedComplex<U> &other) const
     {
         // This relies on the FixedPoint template operator+ we just wrote
-        return FixedComplex<T>{real + other.real, imag + other.imag};
+        return FixedComplex<T>{_real + other._real, _imag + other._imag};
     }
 
     template <typename U>
     constexpr auto operator-(const FixedComplex<U> &other) const
     {
-        return FixedComplex<T>{real - other.real, imag - other.imag};
+        return FixedComplex<T>{_real - other._real, _imag - other._imag};
     }
 
-    /**
-     * @brief Complex Multiplication (The Twiddle Rotation)
-     * (a+bi)*(c+di) = (ac-bd) + (ad+bc)i
-     */
-    template <typename U>
-    constexpr auto operator*(const FixedComplex<U> &other) const
+    template<int OtherB>
+    constexpr auto operator*(const FixedComplex<FixedPoint<OtherB>>& other) const {
+        // 1. Fazemos as 4 multiplicações em 64 bits puras (sem shift ainda)
+        int64_t r1 = static_cast<int64_t>(this->_real.raw) * other.real().raw;
+        int64_t r2 = static_cast<int64_t>(this->_imag.raw) * other.imag().raw;
+        int64_t i1 = static_cast<int64_t>(this->_real.raw) * other.imag().raw;
+        int64_t i2 = static_cast<int64_t>(this->_imag.raw) * other.real().raw;
+
+        // 2. Soma/Subtrai no acumulador de 64 bits (precisão total)
+        int64_t real_acc = r1 - r2;
+        int64_t imag_acc = i1 + i2;
+
+        // 3. Arredonda e faz o shift único pelos bits do Twiddle (OtherB)
+        real_acc += (1LL << (OtherB - 1));
+        imag_acc += (1LL << (OtherB - 1));
+
+        return FixedComplex<T>(
+            FixedPoint<T::FractionalBits>(static_cast<int32_t>(real_acc >> OtherB)),
+            FixedPoint<T::FractionalBits>(static_cast<int32_t>(imag_acc >> OtherB))
+        );
+    }
+
+
+    constexpr FixedComplex conj() const
     {
-        return FixedComplex<T>{
-            (real * other.real) - (imag * other.imag),
-            (real * other.imag) + (imag * other.real)};
+        return {_real, -_imag};
     }
 
-    // Helper for debugging/testing
-    constexpr double to_double_real() const { return real.to_double(); }
-    constexpr double to_double_imag() const { return imag.to_double(); }
+    friend constexpr FixedComplex conj(const FixedComplex &c)
+    {
+        return c.conj();
+    }
+
+    // Sobrecargas de função membro para imitar std::complex
+    constexpr T& real() { return _real; }
+    constexpr const T& real() const { return _real; }
+    constexpr T& imag() { return _imag; }
+    constexpr const T& imag() const { return _imag; }
 };
+
+template<typename T>
+constexpr auto real(const FixedComplex<T>& c) { return c.real(); }
+
+template<typename T>
+constexpr auto imag(const FixedComplex<T>& c) { return c.imag(); }
 
 // Common aliases
 using Q31Complex = FixedComplex<Q31>;
 using Q23Complex = FixedComplex<Q23>;
+using Q15Complex = FixedComplex<Q15>;
+
+
+
+
+/**
+ * @brief Sobrecarga específica para o nosso FixedComplex.
+ * Aqui usamos o shift direto para máxima performance no RP2350.
+ */
+template<int B>
+constexpr FixedComplex<FixedPoint<B>> scale_in_half(const FixedComplex<FixedPoint<B>>& value) {
+    // Usamos o operador de shift que definimos na FixedPoint
+    std::cout << "Scaling down by half: " << (double)value.real() << " + " << (double)value.imag() << "i -> ";
+    auto result = FixedComplex<FixedPoint<B>>(
+        FixedPoint<B>(value._real.raw + 1 >> 1),
+        FixedPoint<B>(value._imag.raw + 1 >> 1)
+    );
+    std::cout << (double)result.real() << " + " << (double)result.imag() << "i" << std::endl;
+    return result;
+}

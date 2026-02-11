@@ -27,6 +27,12 @@ target_link_libraries(fixed_point_tests PRIVATE fft_logic)
 add_executable(butterfly_tests tests/butterfly_tests.cpp)
 target_link_libraries(butterfly_tests PRIVATE fft_logic)
 
+add_executable(fft_tests tests/fft_tests.cpp)
+target_link_libraries(fft_tests PRIVATE fft_logic)
+
+add_executable(roundtrip_tests tests/roundtrip_tests.cpp)
+target_link_libraries(roundtrip_tests PRIVATE fft_logic)
+
 # Optional: Enable compiler warnings (helps avoid type bugs)
 if(MSVC)
     target_compile_options(twiddles_test PRIVATE /W4)

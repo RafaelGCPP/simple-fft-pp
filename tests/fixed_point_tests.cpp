@@ -75,12 +75,12 @@ void test_complex_multiplication() {
     Q31Complex b(0.5, -0.5);
     auto result = a * b;
 
-    if (std::abs(result.to_double_real() - 0.5) < 1e-9 && 
-        std::abs(result.to_double_imag() - 0.0) < 1e-9) {
+    if (std::abs((double)result.real() - 0.5) < 1e-9 && 
+        std::abs((double)result.imag() - 0.0) < 1e-9) {
         std::cout << "✅ Complex Multiplication (conjugates): Success" << std::endl;
     } else {
         std::cout << "❌ Complex Multiplication failed. Got: " 
-                  << result.to_double_real() << " + " << result.to_double_imag() << "i" << std::endl;
+                  << (double)result.real() << " + " << (double)result.imag() << "i" << std::endl;
     }
 }
 
@@ -89,7 +89,8 @@ void test_constexpr_verification() {
     static_assert(const_val.raw == 0x10000000, "constexpr conversion failed");
     
     static constexpr Q31Complex const_cplx(0.5, -0.5);
-    static_assert(const_cplx.real.raw == 0x40000000, "constexpr complex real failed");
+    static_assert(const_cplx._real.raw == 0x40000000, "constexpr complex real failed");
+    static_assert(const_cplx._imag.raw == -0x40000000, "constexpr complex imag failed");
     
     std::cout << "✅ constexpr static_assert: Success" << std::endl;
 }
@@ -111,13 +112,13 @@ void test_mixed_addition() {
 
 void test_mixed_multiplication() {
     std::cout << "Testing Mixed-Precision Multiplication (Q23 * Q31)... ";
-    Q23 a = Q23::from_double(0.5);
+    Q23 a = Q23::from_double(8.0); 
     Q31 b = Q31::from_double(0.125);
     
     // Result should be in the scale of 'a' (Q23)
-    auto result = a * b; 
+    Q23 result = a * b; 
     
-    if (std::abs(result.to_double() - 0.0625) < 1e-7) {
+    if (std::abs(result.to_double() - 1.0) < 1e-7) {
         std::cout << "✅" << std::endl;
     } else {
         std::cout << "❌ Got: " << result.to_double() << std::endl;
@@ -132,11 +133,11 @@ void test_mixed_complex() {
     
     auto result = signal * twiddle; // Should result in (0, -0.5) in Q23 scale
 
-    if (std::abs(result.to_double_real() - 0.0) < 1e-7 && 
-        std::abs(result.to_double_imag() - (-0.5)) < 1e-7) {
+    if (std::abs((double)result.real() - 0.0) < 1e-7 && 
+        std::abs((double)result.imag() - (-0.5)) < 1e-7) {
         std::cout << "✅" << std::endl;
     } else {
-        std::cout << "❌ Got: " << result.to_double_real() << " + " << result.to_double_imag() << "i" << std::endl;
+        std::cout << "❌ Got: " << (double)result.real() << " + " << (double)result.imag() << "i" << std::endl;
     }
 }
 

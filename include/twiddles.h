@@ -12,6 +12,7 @@
 template<typename T, size_t N>
 class TwiddleGenerator {
 public:
+    static constexpr size_t N_Value = N;
     static constexpr size_t Q = N / 4;
 
     // Base table (always stored in double or Q31 for maximum internal precision)
