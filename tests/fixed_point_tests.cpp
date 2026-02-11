@@ -7,7 +7,7 @@
 
 void test_q31_conversion() {
     double val = 0.5;
-    auto q_val = Q31::from_double(val);
+    auto q_val = Q31(val);
     
     if (q_val.raw == 0x40000000) {
         std::cout << "✅ Q31 Conversion (0.5): Success" << std::endl;
@@ -17,11 +17,11 @@ void test_q31_conversion() {
 }
 
 void test_addition() {
-    auto a = Q31::from_double(0.1);
-    auto b = Q31::from_double(0.2);
+    auto a = Q31(0.1);
+    auto b = Q31(0.2);
     auto result = a + b;
     
-    double diff = std::abs(result.to_double() - 0.3);
+    double diff = std::abs((double)result - 0.3);
     if (diff < 1e-9) {
         std::cout << "✅ Addition (0.1 + 0.2): Success" << std::endl;
     } else {
@@ -30,8 +30,8 @@ void test_addition() {
 }
 
 void test_multiplication() {
-    auto a = Q31::from_double(0.5);
-    auto b = Q31::from_double(0.5);
+    auto a = Q31(0.5);
+    auto b = Q31(0.5);
     auto result = a * b;
 
     if (result.raw == 0x20000000) {
@@ -42,26 +42,26 @@ void test_multiplication() {
 }
 
 void test_negative_numbers() {
-    auto a = Q31::from_double(-0.75);
-    auto b = Q31::from_double(0.5);
+    auto a = Q31(-0.75);
+    auto b = Q31(0.5);
     auto result = a * b; 
 
-    if (std::abs(result.to_double() - (-0.375)) < 1e-9) {
+    if (std::abs((double)result - (-0.375)) < 1e-9) {
         std::cout << "✅ Negative Multiplication (-0.75 * 0.5): Success" << std::endl;
     } else {
-        std::cout << "❌ Negative Multiplication failed: " << result.to_double() << std::endl;
+        std::cout << "❌ Negative Multiplication failed: " << (double)result << std::endl;
     }
 }
 
 void test_multiplication_rounding() {
     // 0.1 in Q31 is not exact. 
     // 0.1 * 0.1 = 0.01
-    auto a = Q31::from_double(0.1);
-    auto b = Q31::from_double(0.1);
+    auto a = Q31(0.1);
+    auto b = Q31(0.1);
     auto result = a * b;
     
     double expected = 0.01;
-    double actual = result.to_double();
+    double actual = (double)result;
     
     // Simple truncation would yield 0.0099999997...
     // Rounding should bring it to the closest representable value.
@@ -85,7 +85,7 @@ void test_complex_multiplication() {
 }
 
 void test_constexpr_verification() {
-    static constexpr auto const_val = Q31::from_double(0.125);
+    static constexpr auto const_val = Q31(0.125);
     static_assert(const_val.raw == 0x10000000, "constexpr conversion failed");
     
     static constexpr Q31Complex const_cplx(0.5, -0.5);
@@ -97,31 +97,31 @@ void test_constexpr_verification() {
 
 void test_mixed_addition() {
     std::cout << "Testing Mixed-Precision Addition (Q23 + Q31)... ";
-    Q23 a = Q23::from_double(0.5);
-    Q31 b = Q31::from_double(0.25);
+    Q23 a = Q23(0.5);
+    Q31 b = Q31(0.25);
     
     // a is the base (Q23), so result should be Q23
     auto result = a + b; 
     
-    if (std::abs(result.to_double() - 0.75) < 1e-7) {
+    if (std::abs((double)result - 0.75) < 1e-7) {
         std::cout << "✅" << std::endl;
     } else {
-        std::cout << "❌ Got: " << result.to_double() << std::endl;
+        std::cout << "❌ Got: " << (double)result << std::endl;
     }
 }
 
 void test_mixed_multiplication() {
     std::cout << "Testing Mixed-Precision Multiplication (Q23 * Q31)... ";
-    Q23 a = Q23::from_double(8.0); 
-    Q31 b = Q31::from_double(0.125);
+    Q23 a = Q23(8.0); 
+    Q31 b = Q31(0.125);
     
     // Result should be in the scale of 'a' (Q23)
     Q23 result = a * b; 
     
-    if (std::abs(result.to_double() - 1.0) < 1e-7) {
+    if (std::abs((double)result - 1.0) < 1e-7) {
         std::cout << "✅" << std::endl;
     } else {
-        std::cout << "❌ Got: " << result.to_double() << std::endl;
+        std::cout << "❌ Got: " << (double)result << std::endl;
     }
 }
 

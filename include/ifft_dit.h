@@ -6,8 +6,8 @@
 
 
 /**
- * @brief Função genérica para calcular a metade de um valor.
- * Versão padrão para tipos que suportam multiplicação por double (como std::complex).
+ * @brief Generic function to calculate half of a value.
+ * Default version for types that support multiplication by double (like std::complex).
  */
 template<typename T>
 constexpr T scale_in_half(const T& value) {

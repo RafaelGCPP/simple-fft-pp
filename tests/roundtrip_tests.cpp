@@ -10,42 +10,42 @@
 template<typename Complex, typename TwidComplex>
 void test_fft_roundtrip()
 {
-    const size_t N = 64; // N maior para testar o acúmulo de erro
+    const size_t N = 64; // Larger N to test error accumulation
     const double TOLERANCE = 1e-4;
 
     std::cout << "--- FFT Roundtrip Test (N=" << N << ") ---" << std::endl;
 
-    // 1. Configuração dos tipos
+    // 1. Type configuration
 
     using MyTwidGen = TwiddleGenerator<TwidComplex, N>;
     using FwdFFT = ForwardFFT_DIF<Complex, MyTwidGen>;
     using InvFFT = InverseFFT_DIT<Complex, MyTwidGen>;
 
-    // 2. Criar sinal original (Seno + Cosseno para testar real e imag)
+    // 2. Create original signal (Sine + Cosine to test real and imag)
     std::vector<Complex> original(N);
     std::vector<Complex> buffer(N);
 
     for (size_t n = 0; n < N; ++n)
     {
-        double val_r = 0.4 * std::sin(2.0 * M_PI * 2.0 * n / N); // 2 ciclos
-        double val_i = 0.3 * std::cos(2.0 * M_PI * 5.0 * n / N); // 5 ciclos
+        double val_r = 0.4 * std::sin(2.0 * M_PI * 2.0 * n / N); // 2 cycles
+        double val_i = 0.3 * std::cos(2.0 * M_PI * 5.0 * n / N); // 5 cycles
         original[n] = Complex(val_r, val_i);
         buffer[n] = original[n];
     }
 
-    // 3. Processamento
+    // 3. Processing
     std::cout << "Step 1: Forward FFT (DIF)... " << std::flush;
     FwdFFT::process(buffer.data());
     std::cout << "Done." << std::endl;
 
-    // Aqui o buffer está em Bit-Reversed order, mas não importa!
-    // O IFFT DIT espera exatamente isso.
+    // Here the buffer is in Bit-Reversed order, but it doesn't matter!
+    // The IFFT DIT expects exactly that.
 
     std::cout << "Step 2: Inverse FFT (DIT)... " << std::flush;
     InvFFT::process(buffer.data());
     std::cout << "Done." << std::endl;
 
-    // 4. Verificação de Erro (MSE)
+    // 4. Error Verification (MSE)
     double total_error = 0;
     bool failed = false;
 

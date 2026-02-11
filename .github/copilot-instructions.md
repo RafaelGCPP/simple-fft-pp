@@ -1,0 +1,5 @@
+English is the primary language used in this project. Please ensure that all code comments, documentation, and commit messages are written in English to maintain consistency and clarity for all contributors.
+If you are contributing to this project and English is not your first language, please feel free to use translation tools or seek assistance from other contributors to help you communicate effectively in English.
+This project aims to be a C++ meta-programming library, so all code should be written in C++. Please avoid using other programming languages in the codebase to maintain consistency and ensure that the project remains focused on its intended purpose.
+C++20 is favorable for this project.
+It will later be used in microcontrollers, so please avoid using features that are not supported by common microcontroller platforms. If you are unsure about the compatibility of a particular feature, please consult the project's documentation or reach out to the maintainers for guidance.

@@ -10,7 +10,7 @@
 template <int B>
 struct FixedPoint
 {
-    static constexpr int FractionalBits = B; // Adicione isso!
+    static constexpr int FractionalBits = B;
     int32_t raw;
 
     // Default constructor
@@ -19,28 +19,20 @@ struct FixedPoint
     // Explicit constructor from raw bits
     constexpr explicit FixedPoint(int32_t r) : raw(r) {}
 
-    // Factory from double (calculated at compile-time if constexpr)
-    static constexpr FixedPoint from_double(double d)
+    // Constructor from double (replaces from_double)
+    constexpr FixedPoint(double d) : raw(0)
     {
-        // Calculate the maximum possible positive value for this bit depth
-        // For Q31 (31 fractional bits), this is 0x7FFFFFFF
         constexpr int32_t kMaxPos = std::numeric_limits<int32_t>::max();
         constexpr int32_t kMaxNeg = std::numeric_limits<int32_t>::min();
 
         double scaled = d * (1LL << FractionalBits);
 
         if (scaled >= static_cast<double>(kMaxPos))
-            return FixedPoint(kMaxPos);
-        if (scaled <= static_cast<double>(kMaxNeg))
-            return FixedPoint(kMaxNeg);
-
-        return FixedPoint(static_cast<int32_t>(scaled));
-    }
-
-    // Converters
-    constexpr double to_double() const
-    {
-        return static_cast<double>(raw) / (1LL << FractionalBits);
+            raw = kMaxPos;
+        else if (scaled <= static_cast<double>(kMaxNeg))
+            raw = kMaxNeg;
+        else
+            raw = static_cast<int32_t>(scaled);
     }
 
     // --- Arithmetic Operators ---
@@ -98,6 +90,11 @@ struct FixedPoint
 
     constexpr FixedPoint operator-() const
     {
+        if (raw == std::numeric_limits<int32_t>::min()) {
+            // If we negate -1, which is -2147483648 in two's complement,
+            // we would overflow. So we clamp to max positive value.
+            return FixedPoint(std::numeric_limits<int32_t>::max());
+        }
         return FixedPoint(-raw);
     }
 
@@ -116,12 +113,12 @@ struct FixedPoint
     }
     // Support for mixed-precision multiplication could be added later
 
-    // Operador de conversão explícito para double
+    // Explicit conversion operator to double
     explicit constexpr operator double() const {
         return static_cast<double>(raw) / (1LL << FractionalBits);
     }
 
-    // Operador de conversão explícito para float
+    // Explicit conversion operator to float
     explicit constexpr operator float() const {
         return static_cast<float>(raw) / (1LL << FractionalBits);
     }
@@ -147,7 +144,7 @@ struct FixedComplex
 
     // Explicitly handle construction to avoid "explicit" constructor conflicts
     constexpr FixedComplex(double r, double i)
-        : _real(T::from_double(r)), _imag(T::from_double(i)) {}
+        : _real(r), _imag(i) {}
 
     // --- Complex Arithmetic ---
     template <typename U>
@@ -165,17 +162,17 @@ struct FixedComplex
 
     template<int OtherB>
     constexpr auto operator*(const FixedComplex<FixedPoint<OtherB>>& other) const {
-        // 1. Fazemos as 4 multiplicações em 64 bits puras (sem shift ainda)
+        // 1. Perform 4 multiplications in pure 64 bits (no shift yet)
         int64_t r1 = static_cast<int64_t>(this->_real.raw) * other.real().raw;
         int64_t r2 = static_cast<int64_t>(this->_imag.raw) * other.imag().raw;
         int64_t i1 = static_cast<int64_t>(this->_real.raw) * other.imag().raw;
         int64_t i2 = static_cast<int64_t>(this->_imag.raw) * other.real().raw;
 
-        // 2. Soma/Subtrai no acumulador de 64 bits (precisão total)
+        // 2. Sum/Subtract in 64-bit accumulator (full precision)
         int64_t real_acc = r1 - r2;
         int64_t imag_acc = i1 + i2;
 
-        // 3. Arredonda e faz o shift único pelos bits do Twiddle (OtherB)
+        // 3. Round and apply single shift by Twiddle bits (OtherB)
         real_acc += (1LL << (OtherB - 1));
         imag_acc += (1LL << (OtherB - 1));
 
@@ -196,7 +193,7 @@ struct FixedComplex
         return c.conj();
     }
 
-    // Sobrecargas de função membro para imitar std::complex
+    // Member function overloads to mimic std::complex
     constexpr T& real() { return _real; }
     constexpr const T& real() const { return _real; }
     constexpr T& imag() { return _imag; }
@@ -218,17 +215,14 @@ using Q15Complex = FixedComplex<Q15>;
 
 
 /**
- * @brief Sobrecarga específica para o nosso FixedComplex.
- * Aqui usamos o shift direto para máxima performance no RP2350.
+ * @brief Specific overload for our FixedComplex.
+ * Here we use direct bit-shift for maximum performance on RP2350.
  */
 template<int B>
 constexpr FixedComplex<FixedPoint<B>> scale_in_half(const FixedComplex<FixedPoint<B>>& value) {
-    // Usamos o operador de shift que definimos na FixedPoint
-    std::cout << "Scaling down by half: " << (double)value.real() << " + " << (double)value.imag() << "i -> ";
-    auto result = FixedComplex<FixedPoint<B>>(
-        FixedPoint<B>(value._real.raw + 1 >> 1),
-        FixedPoint<B>(value._imag.raw + 1 >> 1)
+    // Use the shift operator we defined in FixedPoint
+    return FixedComplex<FixedPoint<B>>(
+        FixedPoint<B>((value._real.raw + 1) >> 1),
+        FixedPoint<B>((value._imag.raw + 1) >> 1)
     );
-    std::cout << (double)result.real() << " + " << (double)result.imag() << "i" << std::endl;
-    return result;
 }
