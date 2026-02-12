@@ -99,7 +99,61 @@ int main()
 }
 ```
 
+## Real-World Scenarios
+
+### Audio Signal Processing on Microcontrollers
+Analyze audio chunks for equalization or visualization.
+```cpp
+// 128-point FFT for a small audio buffer
+// Input: Q15 audio samples (e.g. from a microphone ADC)
+using AudioFFT = ForwardFFT_DIF<Q15Complex, TwiddleGenerator<Q31Complex, 128>>;
+
+void process_audio_chunk(Q15Complex* buffer) {
+    AudioFFT::process(buffer);
+    // buffer now contains frequency bins in bit-reversed order.
+    // Useful for spectral display or detecting dominant frequencies.
+}
+```
+
+### Frequency Domain Filtering
+Efficiently apply filters in the frequency domain. Since the Forward FFT produces bit-reversed output, we can avoid runtime reordering by pre-calculating the filter mask in bit-reversed order.
+```cpp
+// 256-point FFT/IFFT for filtering
+using FwdFFT = ForwardFFT_DIF<std::complex<double>, TwiddleGenerator<std::complex<double>, 256>>;
+using InvFFT = InverseFFT_DIT<std::complex<double>, TwiddleGenerator<std::complex<double>, 256>>;
+
+// Pre-calculated filter coefficients stored in BIT-REVERSED order
+extern const std::vector<std::complex<double>> bit_reversed_filter_mask;
+
+void apply_filter(std::vector<std::complex<double>>& signal) {
+    // 1. Transform to frequency domain (Output is bit-reversed)
+    FwdFFT::process(signal.data());
+
+    // 2. Apply filter mask (Element-wise multiplication)
+    // No bit-reversal needed because the mask matches the FFT output order
+    for(size_t i = 0; i < 256; ++i) {
+        signal[i] *= bit_reversed_filter_mask[i];
+    }
+
+    // 3. Transform back to time domain (Input bit-reversed -> Output natural)
+    InvFFT::process(signal.data());
+}
+```
+
 ## Design Decisions
+
+### Why Metaprogramming?
+
+In embedded real-time systems, predictability and efficiency are paramount. General-purpose FFT libraries often use dynamic planning or runtime recursion, which incurs overhead.
+
+By providing the FFT parameters (size, type, direction) as **template arguments**, this library allows the compiler to:
+
+1. **Calculate Constants at Compile-Time**: Twiddle factor indices, loop strides, and butterfly groups are known constants.
+2. **Unroll Recursion**: The $O(\log N)$ stages of the FFT are expanded into a linear sequence of function calls during compilation.
+3. **Inline Operations**: Small butterfly operations are easily inlined, removing function call overhead.
+4. **Optimize Register Usage**: With constant loop bounds, the compiler can better allocate registers and apply SIMD instructions (like NEON or AVX) automatically.
+
+This results in a "hard-coded" FFT implementation tailored exactly to your specifications, similar to what you might write by hand in assembly, but with C++ type safety and readability.
 
 ### DIF for Forward, DIT for Inverse
 
@@ -146,10 +200,16 @@ view.commit();  // Now data is physically bit-reversed
 auto element2 = data[5];  // Direct access to reordered data
 ```
 
-**Use cases**:
-- Lazy evaluation before FFT when input is in frequency domain
-- Explicit bit-reversal between DIF and other algorithms
-- Reordering for zero-padding or other spectral manipulations
+**Use Cases**:
+
+- **Sparse Access / Lazy Evaluation**:
+  Access specific frequency bins by their natural index without reordering the entire array. Useful when you only need to check a few dominant frequencies.
+
+- **Interfacing with Other Libraries**:
+  Bridge the gap between this library's bit-reversed output and other algorithms (or visualization tools) that expect data in natural sequence.
+
+- **Spectral Manipulation**:
+  Simplify operations like zero-padding (for interpolation) or applying complex frequency masks where reasoning about index mapping is difficult in bit-reversed order.
 
 ## Fixed-Point Types
 
