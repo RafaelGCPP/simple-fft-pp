@@ -143,7 +143,7 @@ auto element = view[5];  // Returns data at bit-reversed index
 view.commit();  // Now data is physically bit-reversed
 
 // Subsequent access is O(1) without reversals
-auto element2 = view[5];  // Direct access to reordered data
+auto element2 = data[5];  // Direct access to reordered data
 ```
 
 **Use cases**:
