@@ -213,13 +213,29 @@ auto element2 = data[5];  // Direct access to reordered data
 
 ## Fixed-Point Types
 
-The library provides three common fixed-point formats:
+The library uses a generic `FixedPoint<B>` template where `B` specifies the number of fractional bits. While the library pre-defines three common aliases, you can instantiate any Q-format (e.g., `FixedPoint<20>`) as needed.
 
-| Type | Fractional Bits | Range | Resolution |
-|------|-----------------|-------|------------|
-| Q15  | 15              | [-1, 1)           | ~3.05e-5  |
-| Q23  | 23              | [-256, 256)       | ~1.19e-7  |
-| Q31  | 31              | [-2, 2)           | ~4.66e-10 |
+**Pre-defined Aliases**:
+
+| Type | Alias For | Range | Resolution |
+|------|-----------|-------|------------|
+| Q15  | `FixedPoint<15>` | [-65536, 65536)   | ~3.05e-5  |
+| Q23  | `FixedPoint<23>` | [-256, 256)       | ~1.19e-7  |
+| Q31  | `FixedPoint<31>` | [-1, 1)           | ~4.66e-10 |
+
+*Note: The underlying storage is always `int32_t`. Adjust `B` to trade off between integer range (bits = 31 - B) and fractional precision.*
+
+### Complex Counterparts
+
+For FFT operations, scalar types are wrapped in `FixedComplex<T>`, which mimics the interface of `std::complex`.
+
+| Complex Type | Underlying Components |
+|--------------|-----------------------|
+| `Q15Complex` | `FixedComplex<Q15>`   |
+| `Q23Complex` | `FixedComplex<Q23>`   |
+| `Q31Complex` | `FixedComplex<Q31>`   |
+
+These types support standard complex arithmetic (conjugate, magnitude squared, multiplication) and can be mixed with `std::complex` for convenience during setup or testing.
 
 Operations between different formats are automatically handled with appropriate scaling.
 
