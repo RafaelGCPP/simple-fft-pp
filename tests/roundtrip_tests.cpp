@@ -59,12 +59,7 @@ void test_fft_roundtrip()
         double i_orig = (double)original[n].imag();
         double r_rec = (double)buffer[n].real();
         double i_rec = (double)buffer[n].imag();
-
-        // double r_orig = original[n].real();
-        // double i_orig = original[n].imag();
-        // double r_rec  = buffer[n].real();
-        // double i_rec  = buffer[n].imag();
-
+        
         double err_r = std::abs(r_orig - r_rec);
         double err_i = std::abs(i_orig - i_rec);
         total_error += (err_r * err_r) + (err_i * err_i);
