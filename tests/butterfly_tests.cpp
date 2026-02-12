@@ -1,8 +1,7 @@
 #include <iostream>
 #include <complex>
 #include <cmath>
-#include "fft_core.h"
-#include "fixed_point.h"
+#include "simple_fft.h"
 
 using DoubleCplx = std::complex<double>;
 

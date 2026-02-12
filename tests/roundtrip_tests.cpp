@@ -2,10 +2,8 @@
 #include <vector>
 #include <cmath>
 #include <iomanip>
-#include "fft_dif.h"
-#include "ifft_dit.h"
-#include "fixed_point.h"
 #include <complex>
+#include "simple_fft.h"
 
 template<typename Complex, typename TwidComplex>
 void test_fft_roundtrip()
@@ -18,8 +16,8 @@ void test_fft_roundtrip()
     // 1. Type configuration
 
     using MyTwidGen = TwiddleGenerator<TwidComplex, N>;
-    using FwdFFT = ForwardFFT_DIF<Complex, MyTwidGen>;
-    using InvFFT = InverseFFT_DIT<Complex, MyTwidGen>;
+    using FwdFFT = FFT<Complex, MyTwidGen>;
+    using InvFFT = IFFT<Complex, MyTwidGen>;
 
     // 2. Create original signal (Sine + Cosine to test real and imag)
     std::vector<Complex> original(N);

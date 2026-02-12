@@ -1,6 +1,7 @@
 #pragma once
 #include <cstddef>
 #include <algorithm> // for std::swap
+#include "twiddles.h"
 
 /**
  * @brief Radix-2 Decimation in Frequency (DIF) Butterfly
@@ -95,3 +96,58 @@ public:
 
     static constexpr size_t size() { return N; }
 };
+
+template<typename T>
+constexpr T scale_in_half(const T& value) {
+    return value * T(0.5);
+}
+
+
+
+/**
+ * @brief Compile-time unrolled Stage Runner
+ */
+template<typename T, int N, typename TwidGen, typename Butterfly = DIF_Butterfly<T>, bool inverse = false>
+struct FFT_Block {
+    static constexpr void process(T* data) {    
+        for (size_t i = 0; i < N/2 ; ++i) {
+            auto w = TwidGen::get_twiddle(i);
+            w = inverse ? conj(w) : w; // Conjugate for IFFT
+            Butterfly::process(data[i], data[i + N/2], w);
+            if (inverse) {
+                data[i] = scale_in_half(data[i]);
+                data[i + N/2] = scale_in_half(data[i + N/2]);
+            }
+        }
+    }
+};
+
+
+template<typename T, typename TwidGen>
+class FFT {
+public:
+    static void process(T* data) {
+        constexpr size_t N = TwidGen::N_Value;
+        FFT_Block<T, N, TwidGen>::process(data);
+        if constexpr (N > 2) {
+            using StrideGen = StridedTwiddleGenerator<TwidGen, 2>;
+            FFT<T, StrideGen>::process(data);
+            FFT<T, StrideGen>::process(data + N/2);
+        }
+    }
+};
+
+template<typename T, typename TwidGen>
+class IFFT {
+public:
+    static void process(T* data) {
+        constexpr size_t N = TwidGen::N_Value;
+        if constexpr (N > 2) {
+            using StrideGen = StridedTwiddleGenerator<TwidGen, 2>;
+            IFFT<T, StrideGen>::process(data);
+            IFFT<T, StrideGen>::process(data + N/2);
+        }
+        FFT_Block<T, N, TwidGen, DIT_Butterfly<T>, true>::process(data);
+    }
+};
+

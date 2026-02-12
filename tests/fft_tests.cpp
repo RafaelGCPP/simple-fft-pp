@@ -2,8 +2,8 @@
 #include <iomanip>
 #include <vector>
 #include <cmath>
-#include "fft_dif.h"
-#include "fixed_point.h"
+#include "simple_fft.h"
+
 
 void test_impulse_response()
 {
@@ -17,7 +17,7 @@ void test_impulse_response()
 
     // 2. Setup FFT
     using MyTwidGen = TwiddleGenerator<Q31Complex, N>;
-    using MyFFT = ForwardFFT_DIF<Q23Complex, MyTwidGen>;
+    using MyFFT = FFT<Q23Complex, MyTwidGen>;
 
     // 3. Execute
     MyFFT::process(buffer.data());
@@ -89,7 +89,7 @@ void test_sine_wave()
 
     // 2. Setup FFT
     using MyTwidGen = TwiddleGenerator<Q31Complex, N>;
-    using MyFFT = ForwardFFT_DIF<Q23Complex, MyTwidGen>;
+    using MyFFT = FFT<Q23Complex, MyTwidGen>;
 
     // 3. Execute
     MyFFT::process(buffer.data());

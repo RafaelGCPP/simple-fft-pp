@@ -80,7 +80,7 @@ public:
 template<typename WrappedGen, size_t Stride>
 class StridedTwiddleGenerator {
 public:
-    static constexpr size_t N_Value = WrappedGen::N_Value;
+    static constexpr size_t N_Value = WrappedGen::N_Value/Stride;
     static constexpr size_t S = Stride;
 
     /**

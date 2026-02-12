@@ -3,8 +3,7 @@
 #include <cmath>
 #include <iomanip>
 #include <vector>
-#include "twiddles.h"
-#include "fixed_point.h"
+#include "simple_fft.h"
 
 // Local helper for testing purposes only
 double get_abs_diff(Q31Complex actual, std::complex<double> expected) {
