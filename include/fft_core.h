@@ -126,7 +126,7 @@ struct FFT_Block {
 template<typename T, typename TwidGen>
 class FFT {
 public:
-    static void process(T* data) {
+    static auto process(T* data) {
         constexpr size_t N = TwidGen::N_Value;
         FFT_Block<T, N, TwidGen>::process(data);
         if constexpr (N > 2) {
@@ -134,13 +134,14 @@ public:
             FFT<T, StrideGen>::process(data);
             FFT<T, StrideGen>::process(data + N/2);
         }
+        return BitReversedView<T, N>(data); // Return a view for bit-reversal access
     }
 };
 
 template<typename T, typename TwidGen>
 class IFFT {
 public:
-    static void process(T* data) {
+    static auto process(T* data) {
         constexpr size_t N = TwidGen::N_Value;
         if constexpr (N > 2) {
             using StrideGen = StridedTwiddleGenerator<TwidGen, 2>;
@@ -148,6 +149,7 @@ public:
             IFFT<T, StrideGen>::process(data + N/2);
         }
         FFT_Block<T, N, TwidGen, DIT_Butterfly<T>, true>::process(data);
+        return data; // Return raw pointer for linear access after IFFT
     }
 };
 
