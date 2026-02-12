@@ -20,13 +20,16 @@ struct IFFT_Stage
 {
     static constexpr void process(T *data)
     {
+        // Use a strided version of the twiddle generator to automatically
+        // handle the twiddle index calculation based on the current stage.
+        using StridedGen = StridedTwiddleGenerator<TwidGen, NumGroups>;
+
         for (size_t g = 0; g < NumGroups; ++g)
         {
             size_t offset = g * Stride * 2;
             for (size_t i = 0; i < Stride; ++i)
             {
-                size_t twid_idx = i *  NumGroups;
-                auto w = conj(TwidGen::get_twiddle(twid_idx));
+                auto w = conj(StridedGen::get_twiddle(i));
 
                 DIT_Butterfly<T>::process(
                     data[offset + i],

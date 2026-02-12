@@ -10,13 +10,15 @@
 template<typename T, typename TwidGen, size_t Stride, size_t NumGroups>
 struct DIF_FFT_Stage {
     static constexpr void process(T* data) {
-        // Inner loops for groups and butterflies
-        // We still use loops here, but 'Stride' and 'NumGroups' are constants,
-        // so the compiler can unroll the 'i' and 'g' loops perfectly.
+        // Use a strided version of the twiddle generator to automatically
+        // handle the twiddle index calculation based on the current stage.
+        // This simplifies butterfly processing by removing index arithmetic.
+        using StridedGen = StridedTwiddleGenerator<TwidGen, NumGroups>;
+
         for (size_t g = 0; g < NumGroups; ++g) {
             size_t offset = g * Stride * 2;
             for (size_t i = 0; i < Stride; ++i) {
-                auto w = TwidGen::get_twiddle(i * NumGroups);
+                auto w = StridedGen::get_twiddle(i);
                 DIF_Butterfly<T>::process(data[offset + i], data[offset + i + Stride], w);
             }
         }

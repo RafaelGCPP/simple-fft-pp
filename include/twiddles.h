@@ -59,4 +59,35 @@ public:
 
         return create_complex(final_r, final_i);
     }
+
 };
+
+/**
+ * @brief Visitor that applies a stride to twiddle factor access.
+ * 
+ * This wrapper allows a TwiddleGenerator to be used with different strides,
+ * which is essential for enabling recursive FFT decomposition where each level
+ * skips twiddle factors according to stage requirements.
+ * 
+ * Example usage:
+ *   using BaseGen = TwiddleGenerator<Q31Complex, 16>;
+ *   using StridedGen = StridedTwiddleGenerator<BaseGen, 2>;
+ *   // Now StridedGen::get_twiddle(k) returns BaseGen::get_twiddle(2*k)
+ * 
+ * @tparam WrappedGen The base TwiddleGenerator type
+ * @tparam Stride The stride factor to apply
+ */
+template<typename WrappedGen, size_t Stride>
+class StridedTwiddleGenerator {
+public:
+    static constexpr size_t N_Value = WrappedGen::N_Value;
+    static constexpr size_t S = Stride;
+
+    /**
+     * @brief Get twiddle factor at index t*Stride
+     */
+    static constexpr auto get_twiddle(size_t t) {
+        return WrappedGen::get_twiddle(t * Stride);
+    }
+};
+
