@@ -17,3 +17,6 @@ target_include_directories(fft_logic INTERFACE
 if(BUILD_TESTSET)
     add_subdirectory(tests)
 endif()
+if(BUILD_BENCHMARK)
+    add_subdirectory(benchmark)
+endif()
