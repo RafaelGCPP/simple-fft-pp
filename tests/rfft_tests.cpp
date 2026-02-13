@@ -101,7 +101,6 @@ template <typename T, typename CplxT>
 void test_rfft_filter_transform()
 {
     const size_t N_REAL = 32;
-    const size_t N_COMPLEX = N_REAL / 2;
     T buffer[N_REAL];
 
     // 1. Generate signal: Sine(2Hz) + Sine(12Hz)

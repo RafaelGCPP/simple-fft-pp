@@ -67,7 +67,7 @@ constexpr size_t reverse_bits(size_t n) {
 template<typename T, size_t N>
 class BitReversedView {
     T* const _data;
-    static constexpr size_t _bits = __builtin_ctz(N); 
+    static constexpr size_t _bits = std::countr_zero(N); 
 
 public:
     explicit BitReversedView(T* data) : _data(data) {}
