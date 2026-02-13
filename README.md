@@ -27,6 +27,7 @@ The library provides:
 
 ```cpp
 #include "simple_fft_complex.h"   // convenience aliases for std::complex<double>
+using namespace sfft;
 
 int main() {
     std::complex<double> data[64];
@@ -42,6 +43,7 @@ int main() {
 
 ```cpp
 #include "simple_fft.h"   // convenience aliases for fixed-point types
+using namespace sfft;
 
 int main() {
     Q23Complex data[128];
@@ -57,6 +59,7 @@ int main() {
 
 ```cpp
 #include "fft_core.h"
+using namespace sfft;
 
 int main()
 {
@@ -81,6 +84,7 @@ For real-valued signals, `RFFT` computes the spectrum at half the cost. See [Rea
 
 ```cpp
 #include "rfft.h"
+using namespace sfft;
 
 int main() {
     const size_t N = 256;
@@ -115,6 +119,7 @@ Analyze audio chunks for equalization or visualization.
 ```cpp
 // 128-point FFT for a small audio buffer
 // Input: Q15 audio samples (e.g. from a microphone ADC)
+using namespace sfft;
 using AudioFFT = FFT<Q15Complex, TwiddleGenerator<Q31Complex, 128>>;
 
 void process_audio_chunk(Q15Complex* buffer) {
@@ -128,6 +133,7 @@ void process_audio_chunk(Q15Complex* buffer) {
 Efficiently apply filters in the frequency domain. Since the Forward FFT produces bit-reversed output, we can avoid runtime reordering by pre-calculating the filter mask in bit-reversed order.
 ```cpp
 // 256-point FFT/IFFT for filtering
+using namespace sfft;
 using FwdFFT = FFT<std::complex<double>, TwiddleGenerator<std::complex<double>, 256>>;
 using InvFFT = IFFT<std::complex<double>, TwiddleGenerator<std::complex<double>, 256>>;
 
@@ -153,6 +159,7 @@ void apply_filter(std::complex<double>* signal) {
 For real-valued signals, use `RFFT` with the `transform` API — no need for bit-reversed masks or manual repacking. See [RealFFT.md](RealFFT.md) for details.
 ```cpp
 #include "rfft.h"
+using namespace sfft;
 
 void apply_lowpass(double* signal) {
     const size_t N = 256;
@@ -212,6 +219,7 @@ For cases where you need to manipulate bit-reversed data or perform explicit reo
 
 ```cpp
 #include "fft_core.h"
+using namespace sfft;
 
 std::vector<std::complex<double>> data(64);
 // ... populate data ...

@@ -5,6 +5,8 @@
 #include <vector>
 #include "simple_fft.h"
 
+using namespace sfft;
+
 // Local helper for testing purposes only
 double get_abs_diff(Q31Complex actual, std::complex<double> expected) {
     double real_diff = (double) actual.real() - expected.real();

@@ -4,6 +4,10 @@
 #include <array>
 #include <cmath>
 
+#include "constexpr_cos.h"
+
+namespace sfft {
+
 /**
  * @brief Generic Twiddle generator using quadrant symmetry.
  * @tparam T The complex type (must accept construction by Real and Imaginary parts).
@@ -22,7 +26,7 @@ public:
             for (size_t i = 0; i <= Q; ++i) {
                 // We use C++20 compile-time function if available,
                 // or just constant calculations in modern compilers.
-                cos_values[i] = std::cos((2.0 * M_PI * i) / N);
+                cos_values[i] = constexpr_cos((2.0 * constexpr_pi * i) / N);
             }
         }
     };
@@ -91,3 +95,4 @@ public:
     }
 };
 
+} // namespace sfft

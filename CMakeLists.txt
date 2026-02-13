@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.16)
 # Project name
 project(FastFFT_Project LANGUAGES CXX)
 
-# Require C++17 or higher (necessary for advanced constexpr and std::array)
-set(CMAKE_CXX_STANDARD 17)
+# Require C++20 (necessary for constexpr, if constexpr, std::array, etc.)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # 1. Define an "Interface" library (Header-only)

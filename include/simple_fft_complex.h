@@ -3,6 +3,8 @@
 #include <complex>
 #include "fft_core.h"
 
+namespace sfft {
+
 using Complex=std::complex<double>;
 using TwiddleGenerator1024 = TwiddleGenerator<Complex, 1024>;
 using TwiddleGenerator512 = TwiddleGenerator<Complex, 512>;
@@ -30,4 +32,6 @@ using ComplexIFFT128 = IFFT<Complex, TwiddleGenerator128>;
 using ComplexIFFT64 = IFFT<Complex, TwiddleGenerator64>;
 using ComplexIFFT32 = IFFT<Complex, TwiddleGenerator32>;
 using ComplexIFFT16 = IFFT<Complex, TwiddleGenerator16>;
+
+} // namespace sfft
 

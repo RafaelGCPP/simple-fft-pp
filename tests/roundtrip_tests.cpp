@@ -5,6 +5,8 @@
 #include <complex>
 #include "simple_fft.h"
 
+using namespace sfft;
+
 template<typename Complex, typename TwidComplex>
 void test_fft_roundtrip()
 {

@@ -5,6 +5,8 @@
 #include <complex>
 #include "simple_fft.h"
 
+using namespace sfft;
+
 void test_impulse_response()
 {
     const size_t N = 16;

@@ -3,6 +3,8 @@
 #include <cmath>
 #include "simple_fft.h"
 
+using namespace sfft;
+
 using DoubleCplx = std::complex<double>;
 
 // Helper for precision comparison

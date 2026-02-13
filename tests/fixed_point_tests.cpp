@@ -5,6 +5,8 @@
 #include <complex>
 #include "fixed_point.h"
 
+using namespace sfft;
+
 void test_q31_conversion() {
     double val = 0.5;
     auto q_val = Q31(val);

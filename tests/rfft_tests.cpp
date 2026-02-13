@@ -6,6 +6,8 @@
 #include "fixed_point.h"
 #include "rfft.h"
 
+using namespace sfft;
+
 template <typename T, typename CplxT>
 void test_known_complex_sequence()
 {

@@ -84,9 +84,9 @@ The implementation consists of three classes:
 
 | Class | Purpose |
 |-------|---------|
-| `RFFT<T, CplxT, TwidGen>` | Executes the forward Real FFT |
-| `IRFFT<T, CplxT, TwidGen>` | Executes the inverse Real FFT |
-| `RFFT_View<T, CplxT, TwidGen>` | Provides unpacked spectral access and in-place transform |
+| `sfft::RFFT<T, CplxT, TwidGen>` | Executes the forward Real FFT |
+| `sfft::IRFFT<T, CplxT, TwidGen>` | Executes the inverse Real FFT |
+| `sfft::RFFT_View<T, CplxT, TwidGen>` | Provides unpacked spectral access and in-place transform |
 
 Template parameters:
 - `T` — scalar type (e.g., `double`, `Q23`)
@@ -150,6 +150,7 @@ This method allows modifying the spectrum in-place without explicitly unpacking 
 #### Example: Low-Pass Filter
 
 ```cpp
+using namespace sfft;
 auto view = RFFT<double, std::complex<double>, TwidGen>::process(buffer);
 
 view.transform([](size_t k, std::complex<double> val) {

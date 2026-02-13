@@ -3,6 +3,8 @@
 #include "fixed_point.h"
 #include "fft_core.h"
 
+namespace sfft {
+
 using TwiddleGenerator1024 = TwiddleGenerator<Q31Complex, 1024>;
 using TwiddleGenerator512 = TwiddleGenerator<Q31Complex, 512>;
 using TwiddleGenerator256 = TwiddleGenerator<Q31Complex, 256>;
@@ -46,3 +48,5 @@ using FixedIFFT128Q15 = IFFT<Q15Complex, TwiddleGenerator128>;
 using FixedIFFT64Q15 = IFFT<Q15Complex, TwiddleGenerator64>;
 using FixedIFFT32Q15 = IFFT<Q15Complex, TwiddleGenerator32>;
 using FixedIFFT16Q15 = IFFT<Q15Complex, TwiddleGenerator16>;
+
+} // namespace sfft

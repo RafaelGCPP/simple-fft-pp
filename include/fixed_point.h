@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <cmath>
 
+namespace sfft {
+
 /**
  * @brief A generic Fixed Point scalar type.
  * @tparam B Number of bits used for the fractional part (e.g., 31 for Q31).
@@ -226,3 +228,5 @@ constexpr FixedComplex<FixedPoint<B>> scale_in_half(const FixedComplex<FixedPoin
         FixedPoint<B>((value._imag.raw + 1) >> 1)
     );
 }
+
+} // namespace sfft

@@ -3,6 +3,8 @@
 #include <algorithm> // for std::swap
 #include "twiddles.h"
 
+namespace sfft {
+
 /**
  * @brief Radix-2 Decimation in Frequency (DIF) Butterfly
  * * Logic:
@@ -153,3 +155,4 @@ public:
     }
 };
 
+} // namespace sfft

@@ -2,6 +2,8 @@
 
 #include "fft_core.h"
 
+namespace sfft {
+
 template <typename T, typename CplxT, typename TwidGen>
 class RFFT_View
 {
@@ -132,3 +134,5 @@ public:
         return data; // Return raw pointer for linear access after IRFFT
     }
 };
+
+} // namespace sfft
