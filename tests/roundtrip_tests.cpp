@@ -8,7 +8,7 @@
 using namespace sfft;
 
 template<typename Complex, typename TwidComplex>
-void test_fft_roundtrip()
+int test_fft_roundtrip()
 {
     const size_t N = 64; // Larger N to test error accumulation
     const double TOLERANCE = 1e-4;
@@ -90,13 +90,16 @@ void test_fft_roundtrip()
     else
     {
         std::cout << "\n❌ FAILURE: Signal distortion too high." << std::endl;
+        return -1;
     }
+    return 0;
 }
 
 int main()
 {
-    test_fft_roundtrip<std::complex<double>, std::complex<double>>();
-    test_fft_roundtrip<Q15Complex,Q15Complex>();
-    test_fft_roundtrip<Q15Complex, Q31Complex>();
-    return 0;
+    int retval = 0;
+    retval |= test_fft_roundtrip<std::complex<double>, std::complex<double>>();
+    retval |= test_fft_roundtrip<Q15Complex,Q15Complex>();
+    retval |= test_fft_roundtrip<Q15Complex, Q31Complex>();
+    return retval;
 }

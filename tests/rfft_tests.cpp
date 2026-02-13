@@ -9,7 +9,7 @@
 using namespace sfft;
 
 template <typename T, typename CplxT>
-void test_known_complex_sequence()
+int test_known_complex_sequence()
 {
     const size_t N = 16;
     std::cout << "\n--- Testing FFT Forward DIF (Known Sequence N=" << N << ") ---" << std::endl;
@@ -97,10 +97,12 @@ void test_known_complex_sequence()
     else
     {
         std::cout << "❌ Test failed!" << std::endl;
+        return -1;
     }
+    return 0;
 }
 template <typename T, typename CplxT>
-void test_rfft_filter_transform()
+int test_rfft_filter_transform()
 {
     const size_t N_REAL = 32;
     T buffer[N_REAL];
@@ -155,13 +157,16 @@ void test_rfft_filter_transform()
     else
     {
         std::cout << "❌ Test failed!" << std::endl;
+        return -1;
     }
+    return 0;
 }
 int main()
 {
-    test_known_complex_sequence<Q23, Q23Complex>();
-    test_known_complex_sequence<double, std::complex<double>>();
-    test_rfft_filter_transform<Q23, Q23Complex>();
-    test_rfft_filter_transform<double, std::complex<double>>();
-    return 0;
+    int retval = 0;
+    retval |= test_known_complex_sequence<Q23, Q23Complex>();
+    retval |= test_known_complex_sequence<double, std::complex<double>>();
+    retval |= test_rfft_filter_transform<Q23, Q23Complex>();
+    retval |= test_rfft_filter_transform<double, std::complex<double>>();
+    return retval;
 }

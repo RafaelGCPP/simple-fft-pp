@@ -7,7 +7,7 @@
 
 using namespace sfft;
 
-void test_impulse_response()
+int test_impulse_response()
 {
     const size_t N = 16;
     std::cout << "--- Testing FFT Forward DIF (Impulse Response N=" << N << ") ---" << std::endl;
@@ -55,14 +55,15 @@ void test_impulse_response()
         std::cout << std::endl;
     }
 
-    if (all_ok)
-    {
-        std::cout << "\n✨ FFT Impulse Test Passed!" << std::endl;
-    }
-    else
+    if (!all_ok)
+
     {
         std::cout << "\n⚠️ FFT Impulse Test Failed (Check scaling/butterfly)." << std::endl;
+        return -1;
     }
+
+    std::cout << "\n✨ FFT Impulse Test Passed!" << std::endl;
+    return 0;
 }
 
 // Helper to calculate magnitude
@@ -73,7 +74,7 @@ double get_mag(Q23Complex c)
     return std::sqrt(r * r + i * i);
 }
 
-void test_sine_wave()
+int test_sine_wave()
 {
     const size_t N = 16;
     const int target_bin = 1; // 1 cycle per window
@@ -165,10 +166,11 @@ void test_sine_wave()
             std::cout << " 🔥 PEAK";
         std::cout << std::endl;
     }
+    return 0;
 }
 
 template <typename T>
-void test_known_complex_sequence()
+int test_known_complex_sequence()
 {
     const size_t N = 8;
     std::cout << "\n--- Testing FFT Forward DIF (Known Sequence N=" << N << ") ---" << std::endl;
@@ -180,8 +182,7 @@ void test_known_complex_sequence()
         T(-8.0, -7.0),
         T(-6.0, -5.0),
         T(-4.0, -3.0),
-        T(-2.0, -1.0)
-    };
+        T(-2.0, -1.0)};
 
     T expected_fft[N] = {
         T(-4.0, 4.0),
@@ -191,8 +192,7 @@ void test_known_complex_sequence()
         T(-8.0, -8.0),
         T(5.27208, 12.72792),
         T(0.0, -16.0),
-        T(-12.72792, 30.72792)
-    };
+        T(-12.72792, 30.72792)};
 
     auto twid_gen = TwiddleGenerator<T, N>();
     auto fft = FFT<T, decltype(twid_gen)>();
@@ -201,8 +201,9 @@ void test_known_complex_sequence()
     view.commit(); // Ensure data is in normal order for comparison
     std::cout << "Index | Real       | Imag       | Mag        | Expected Real | Expected Imag | Expected Mag | Abs Error" << std::endl;
     std::cout << "--------------------------------------------------------------------------------------------------------" << std::endl;
-    bool pass=true;
-    for (size_t i = 0; i < N; ++i)    {
+    bool pass = true;
+    for (size_t i = 0; i < N; ++i)
+    {
         double r = (double)input[i].real();
         double img = (double)input[i].imag();
         double mag = std::sqrt(r * r + img * img);
@@ -210,7 +211,8 @@ void test_known_complex_sequence()
         double exp_img = (double)expected_fft[i].imag();
         double exp_mag = std::sqrt(exp_r * exp_r + exp_img * exp_img);
         double abs_error = std::sqrt((r - exp_r) * (r - exp_r) + (img - exp_img) * (img - exp_img));
-        if (abs_error > 1e-4) {
+        if (abs_error > 1e-4)
+        {
             pass = false;
         }
         std::cout << std::setw(5) << i << " | "
@@ -223,16 +225,18 @@ void test_known_complex_sequence()
                   << std::setw(13) << exp_mag << " | "
                   << std::setw(9) << abs_error << std::endl;
     }
-    if (pass) {
-        std::cout << "✨ Test passed!" << std::endl;
-    } else {
+    if (!pass)
+    {
         std::cout << "❌ Test failed!" << std::endl;
+        return -1;
     }
+
+    std::cout << "✨ Test passed!" << std::endl;
+    return 0;
 }
 
-
 template <typename T>
-void test_ifft_known_complex_sequence()
+int test_ifft_known_complex_sequence()
 {
     const size_t N = 8;
     std::cout << "\n--- Testing IFFT (Known Sequence N=" << N << ") ---" << std::endl;
@@ -244,8 +248,7 @@ void test_ifft_known_complex_sequence()
         T(-8.0, -7.0),
         T(-6.0, -5.0),
         T(-4.0, -3.0),
-        T(-2.0, -1.0)
-    };
+        T(-2.0, -1.0)};
 
     T input[N] = {
         T(-4.0, 4.0),
@@ -255,8 +258,7 @@ void test_ifft_known_complex_sequence()
         T(-8.0, -8.0),
         T(5.27208, 12.72792),
         T(0.0, -16.0),
-        T(-12.72792, 30.72792)
-    };
+        T(-12.72792, 30.72792)};
 
     auto twid_gen = TwiddleGenerator<T, N>();
     auto fft = IFFT<T, decltype(twid_gen)>();
@@ -266,8 +268,9 @@ void test_ifft_known_complex_sequence()
     fft.process(input);
     std::cout << "Index | Real       | Imag       | Mag        | Expected Real | Expected Imag | Expected Mag | Abs Error" << std::endl;
     std::cout << "--------------------------------------------------------------------------------------------------------" << std::endl;
-    bool pass=true;
-    for (size_t i = 0; i < N; ++i)    {
+    bool pass = true;
+    for (size_t i = 0; i < N; ++i)
+    {
         double r = (double)input[i].real();
         double img = (double)input[i].imag();
         double mag = std::sqrt(r * r + img * img);
@@ -275,7 +278,8 @@ void test_ifft_known_complex_sequence()
         double exp_img = (double)expected_result[i].imag();
         double exp_mag = std::sqrt(exp_r * exp_r + exp_img * exp_img);
         double abs_error = std::sqrt((r - exp_r) * (r - exp_r) + (img - exp_img) * (img - exp_img));
-        if (abs_error > 1e-4) {
+        if (abs_error > 1e-4)
+        {
             pass = false;
         }
         std::cout << std::setw(5) << i << " | "
@@ -288,21 +292,23 @@ void test_ifft_known_complex_sequence()
                   << std::setw(13) << exp_mag << " | "
                   << std::setw(9) << abs_error << std::endl;
     }
-    if (pass) {
-        std::cout << "✨ Test passed!" << std::endl;
-    } else {
+    if (!pass)
+    {
         std::cout << "❌ Test failed!" << std::endl;
+        return -1;
     }
+    std::cout << "✨ Test passed!" << std::endl;
+    return 0;
 }
-
 
 int main()
 {
-    test_impulse_response();
-    test_sine_wave();
-    test_known_complex_sequence<Q23Complex>();
-    test_known_complex_sequence<std::complex<double>>();
-    test_ifft_known_complex_sequence<Q23Complex>();
-    test_ifft_known_complex_sequence<std::complex<double>>();
-    return 0;
+    int retval=0;
+    retval |= test_impulse_response();
+    retval |= test_sine_wave();
+    retval |= test_known_complex_sequence<Q23Complex>();
+    retval |= test_known_complex_sequence<std::complex<double>>();
+    retval |= test_ifft_known_complex_sequence<Q23Complex>();
+    retval |= test_ifft_known_complex_sequence<std::complex<double>>();
+    return retval;
 }

@@ -30,7 +30,7 @@ void print_q31_failure(int k, std::complex<double> expected, Q31Complex actual) 
               << "   Diff:     " << get_abs_diff(actual, expected) << "\n\n";
 }
 
-void test_twiddle_generation() {
+int test_twiddle_generation() {
     const int N = 256;
     const double EPSILON = 1e-12; 
     bool all_passed = true;
@@ -57,10 +57,12 @@ void test_twiddle_generation() {
         std::cout << "\n✨ All twiddles are mathematically correct!\n";
     } else {
         std::cout << "\n⚠️ The test failed at some points.\n";
+        return -1;
     }
+    return 0;
 }
 
-void test_twiddle_generation_q31() {
+int test_twiddle_generation_q31() {
     const int N = 256;
     const double EPSILON = 1e-6; 
     bool all_passed = true;
@@ -89,11 +91,14 @@ void test_twiddle_generation_q31() {
         std::cout << "\n✨ All Q31 twiddles are within tolerance!\n";
     } else {
         std::cout << "\n⚠️ The Q31 test failed at some points.\n";
+        return -1;
     }
+    return 0;
 }
 
 int main() {
-    test_twiddle_generation();
-    test_twiddle_generation_q31();
-    return 0;
+    int retval = 0;
+    retval |= test_twiddle_generation();
+    retval |= test_twiddle_generation_q31();
+    return retval;
 }
