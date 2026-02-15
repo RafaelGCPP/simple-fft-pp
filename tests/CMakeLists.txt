@@ -11,7 +11,9 @@ add_executable(rfft_tests rfft_tests.cpp)
 target_link_libraries(rfft_tests PRIVATE fft_logic)
 
 
-target_compile_options(fixed_point_tests PRIVATE -Wall -Wextra -Wpedantic)
-target_compile_options(fft_tests PRIVATE -Wall -Wextra -Wpedantic)
-target_compile_options(roundtrip_tests PRIVATE -Wall -Wextra -Wpedantic)
-target_compile_options(rfft_tests PRIVATE -Wall -Wextra -Wpedantic)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_compile_options(fixed_point_tests PRIVATE -Wall -Wextra -Wpedantic) 
+    target_compile_options(fft_tests PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(roundtrip_tests PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(rfft_tests PRIVATE -Wall -Wextra -Wpedantic)
+endif()

@@ -1,13 +1,20 @@
 #include <iostream>
 #include <complex>
 #include <utility>
+#include <random>
+#include <ctime>
 #include "simple_fft.h"
 #include "rfft.h"
+
+std::mt19937 gen(std::random_device{}());
+std::uniform_real_distribution<double> dist(-1, 1);
+
+constexpr double timescale_us = 1000000.0 / CLOCKS_PER_SEC;
 
 template <typename T>
 T generate_sample()
 {
-    return T((double)(random() - 0x40000000) / 0x80000000l);
+    return T(dist(gen));
 }
 
 template <typename T, typename CplxT, typename TwidT, int N>
@@ -24,7 +31,7 @@ void rfft_benchmark_size(T *data)
         fft.inverse(data);
     }
     unsigned int elapsed = clock() - start;
-    std::cout << elapsed / 10000.0 << "us per transform" << std::endl;
+    std::cout << elapsed * timescale_us / 10000.0 << "us per transform" << std::endl;
 }
 
 template <typename T, typename CplxT, typename TwidT, int... Ns>

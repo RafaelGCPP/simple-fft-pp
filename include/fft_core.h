@@ -1,8 +1,10 @@
 #pragma once
 #include <cstddef>
 #include <algorithm> // for std::swap
-
+#include <numbers> // for std::numbers::pi
 #include <array>
+#include <bit> // for std::countr_zero
+#include "constexpr_math.h"
 
 namespace sfft
 {
@@ -16,7 +18,8 @@ namespace sfft
             std::array<T, N / 2> arr{};
             for (size_t i = 0; i < N / 2; ++i)
             {
-                arr[i] = T(cos(-2.0 * M_PI * i / N), sin(-2.0 * M_PI * i / N));
+                double angle = -2.0 * std::numbers::pi * i / N;
+                arr[i] = T(sfft::math::cos(angle), sfft::math::sin(angle));
             }
             return arr;
         }();

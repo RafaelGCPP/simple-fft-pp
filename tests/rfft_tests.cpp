@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <vector>
 #include <cmath>
+#include <numbers> // for std::numbers::pi
 #include <complex>
 #include "fixed_point.h"
 #include "rfft.h"
@@ -111,8 +112,8 @@ int test_rfft_filter_transform()
     for (size_t i = 0; i < N_REAL; ++i)
     {
         double t = (double)i / N_REAL;
-        double signal = 0.4 * std::sin(2.0 * M_PI * 2.0 * t) +
-                        0.2 * std::sin(2.0 * M_PI * 12.0 * t);
+        double signal = 0.4 * std::sin(2.0 * std::numbers::pi * 2.0 * t) +
+                        0.2 * std::sin(2.0 * std::numbers::pi * 12.0 * t);
         buffer[i] = T(signal);
     }
 
@@ -138,7 +139,7 @@ int test_rfft_filter_transform()
     for (size_t i = 0; i < N_REAL; ++i)
     {
         double t = (double)i / N_REAL;
-        double expected = 0.4 * std::sin(2.0 * M_PI * 2.0 * t);
+        double expected = 0.4 * std::sin(2.0 * std::numbers::pi * 2.0 * t);
         double actual = (double)buffer[i];
         std::cout << std::setw(5) << i << " | "
                   << std::setw(15) << actual << " | "
