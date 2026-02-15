@@ -141,7 +141,7 @@ namespace sfft
                         T a = data[block_start + j];
                         T b = data[block_start + j + stride];
                         U twiddle = conj(TwidGen::twiddles[j * num_blocks]);
-                        b = b * twiddle;
+                        b *= twiddle;
                         data[block_start + j] = scale_in_half(a + b);
                         data[block_start + j + stride] = scale_in_half(a - b);
                     }
