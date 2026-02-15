@@ -8,7 +8,7 @@
 
 using namespace sfft;
 
-template <typename T, typename CplxT>
+template <typename T, typename CplxT, typename TwidT>
 int test_known_complex_sequence()
 {
     const size_t N = 16;
@@ -40,7 +40,7 @@ int test_known_complex_sequence()
         CplxT(9.00000, 45.24606),
     };
 
-    auto fft = RFFT<T, CplxT, TwiddleGenerator<CplxT, N>>();
+    auto fft = RFFT<T, CplxT, TwidT, N>();
     auto view = fft.process(input);
 
     std::cout << "Index | Real       | Imag       | Mag        | Expected Real | Expected Imag | Expected Mag | Abs Error" << std::endl;
@@ -70,8 +70,8 @@ int test_known_complex_sequence()
                   << std::setw(9) << abs_error << std::endl;
     }
 
-    auto ifft = IRFFT<T, CplxT, TwiddleGenerator<CplxT, N>>();
-    T *output = ifft.process(input);
+    auto ifft = RFFT<T, CplxT, TwidT, N>();
+    T *output = ifft.inverse(input);
     std::cout << "\nIndex | Reconstructed Real | Expected Real | Abs Error" << std::endl;
     std::cout << "--------------------------------------------------------" << std::endl;
     for (size_t i = 0; i < N; ++i)
@@ -101,7 +101,7 @@ int test_known_complex_sequence()
     }
     return 0;
 }
-template <typename T, typename CplxT>
+template <typename T, typename CplxT, typename TwidT>
 int test_rfft_filter_transform()
 {
     const size_t N_REAL = 32;
@@ -117,8 +117,8 @@ int test_rfft_filter_transform()
     }
 
     // 2. Process RFFT
-    using FullTwidGen = TwiddleGenerator<CplxT, N_REAL>;
-    auto view = RFFT<T, CplxT, FullTwidGen>::process(buffer);
+    auto rfft= RFFT<T, CplxT, TwidT, N_REAL>();
+    auto view = rfft.process(buffer);
 
     // 3. Apply Transform (Low-Pass Filter)
     // If k > 5, zero out the bin.
@@ -128,7 +128,7 @@ int test_rfft_filter_transform()
         return val; });
 
     // 4. Reconstruct via IRFFT
-    IRFFT<T, CplxT, FullTwidGen>::process(buffer);
+    rfft.inverse(buffer);
 
     bool pass = true;
     std::cout << std::endl;
@@ -164,9 +164,9 @@ int test_rfft_filter_transform()
 int main()
 {
     int retval = 0;
-    retval |= test_known_complex_sequence<Q23, Q23Complex>();
-    retval |= test_known_complex_sequence<double, std::complex<double>>();
-    retval |= test_rfft_filter_transform<Q23, Q23Complex>();
-    retval |= test_rfft_filter_transform<double, std::complex<double>>();
+    retval |= test_known_complex_sequence<Q23, Q23Complex, Q31Complex>();
+    retval |= test_known_complex_sequence<double, std::complex<double>, std::complex<double>>();
+    retval |= test_rfft_filter_transform<Q23, Q23Complex, Q31Complex>();
+    retval |= test_rfft_filter_transform<double, std::complex<double>, std::complex<double>>();
     return retval;
 }

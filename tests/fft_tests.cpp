@@ -3,7 +3,7 @@
 #include <vector>
 #include <cmath>
 #include <complex>
-#include "simple_fft.h"
+#include <simple_fft.h>
 
 using namespace sfft;
 
@@ -18,11 +18,10 @@ int test_impulse_response()
     buffer[0] = Q23Complex(1.0, 0.0);
 
     // 2. Setup FFT
-    using MyTwidGen = TwiddleGenerator<Q31Complex, N>;
-    using MyFFT = FFT<Q23Complex, MyTwidGen>;
+    auto fft = FixedFFT16Q23(); // FFT<Q23Complex, Q31Complex, N>();
 
     // 3. Execute
-    MyFFT::process(buffer.data());
+    fft.process(buffer.data());
 
     // 4. Verify
     // Since input was (1,0,0...), output bins should all have magnitude 1.0
@@ -91,11 +90,10 @@ int test_sine_wave()
     }
 
     // 2. Setup FFT
-    using MyTwidGen = TwiddleGenerator<Q31Complex, N>;
-    using MyFFT = FFT<Q23Complex, MyTwidGen>;
+    auto fft = FixedFFT16Q23(); // FFT<Q23Complex, Q31Complex, N>();
 
     // 3. Execute
-    MyFFT::process(buffer.data());
+    fft.process(buffer.data());
 
     // 4. Verify results
     // For a sine wave, we expect peaks at bin 1 and bin 15 (N-1)
@@ -169,7 +167,7 @@ int test_sine_wave()
     return 0;
 }
 
-template <typename T>
+template <typename T, typename U>
 int test_known_complex_sequence()
 {
     const size_t N = 8;
@@ -194,8 +192,7 @@ int test_known_complex_sequence()
         T(0.0, -16.0),
         T(-12.72792, 30.72792)};
 
-    auto twid_gen = TwiddleGenerator<T, N>();
-    auto fft = FFT<T, decltype(twid_gen)>();
+    auto fft = FFT<T, U, N>();
     auto view = BitReversedView<T, N>(input);
     fft.process(input);
     view.commit(); // Ensure data is in normal order for comparison
@@ -235,7 +232,7 @@ int test_known_complex_sequence()
     return 0;
 }
 
-template <typename T>
+template <typename T, typename U>
 int test_ifft_known_complex_sequence()
 {
     const size_t N = 8;
@@ -260,12 +257,11 @@ int test_ifft_known_complex_sequence()
         T(0.0, -16.0),
         T(-12.72792, 30.72792)};
 
-    auto twid_gen = TwiddleGenerator<T, N>();
-    auto fft = IFFT<T, decltype(twid_gen)>();
+    auto fft = FFT<T, U, N>();
     auto view = BitReversedView<T, N>(input);
     view.commit(); // Ensure data is bitreversed for IFFT
 
-    fft.process(input);
+    fft.inverse(input);
     std::cout << "Index | Real       | Imag       | Mag        | Expected Real | Expected Imag | Expected Mag | Abs Error" << std::endl;
     std::cout << "--------------------------------------------------------------------------------------------------------" << std::endl;
     bool pass = true;
@@ -306,9 +302,9 @@ int main()
     int retval=0;
     retval |= test_impulse_response();
     retval |= test_sine_wave();
-    retval |= test_known_complex_sequence<Q23Complex>();
-    retval |= test_known_complex_sequence<std::complex<double>>();
-    retval |= test_ifft_known_complex_sequence<Q23Complex>();
-    retval |= test_ifft_known_complex_sequence<std::complex<double>>();
+    retval |= test_known_complex_sequence<Q23Complex, Q31Complex>();
+    retval |= test_known_complex_sequence<std::complex<double>, std::complex<double>>();
+    retval |= test_ifft_known_complex_sequence<Q23Complex, Q31Complex>();
+    retval |= test_ifft_known_complex_sequence<std::complex<double>, std::complex<double>>();
     return retval;
 }

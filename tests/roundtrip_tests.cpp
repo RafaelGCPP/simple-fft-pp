@@ -17,9 +17,7 @@ int test_fft_roundtrip()
 
     // 1. Type configuration
 
-    using MyTwidGen = TwiddleGenerator<TwidComplex, N>;
-    using FwdFFT = FFT<Complex, MyTwidGen>;
-    using InvFFT = IFFT<Complex, MyTwidGen>;
+    auto fft = FFT<Complex, TwidComplex, N>();
 
     // 2. Create original signal (Sine + Cosine to test real and imag)
     std::vector<Complex> original(N);
@@ -35,14 +33,14 @@ int test_fft_roundtrip()
 
     // 3. Processing
     std::cout << "Step 1: Forward FFT (DIF)... " << std::flush;
-    FwdFFT::process(buffer.data());
+    fft.process(buffer.data());
     std::cout << "Done." << std::endl;
 
     // Here the buffer is in Bit-Reversed order, but it doesn't matter!
     // The IFFT DIT expects exactly that.
 
     std::cout << "Step 2: Inverse FFT (DIT)... " << std::flush;
-    InvFFT::process(buffer.data());
+    fft.inverse(buffer.data());
     std::cout << "Done." << std::endl;
 
     // 4. Error Verification (MSE)
