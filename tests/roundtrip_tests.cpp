@@ -2,6 +2,7 @@
 #include <vector>
 #include <cmath>
 #include <iomanip>
+#include <numbers> // for std::numbers::pi
 #include <complex>
 #include "simple_fft.h"
 
@@ -25,8 +26,8 @@ int test_fft_roundtrip()
 
     for (size_t n = 0; n < N; ++n)
     {
-        double val_r = 0.4 * std::sin(2.0 * M_PI * 2.0 * n / N); // 2 cycles
-        double val_i = 0.3 * std::cos(2.0 * M_PI * 5.0 * n / N); // 5 cycles
+        double val_r = 0.4 * std::sin(2.0 * std::numbers::pi * 2.0 * n / N); // 2 cycles
+        double val_i = 0.3 * std::cos(2.0 * std::numbers::pi * 5.0 * n / N); // 5 cycles
         original[n] = Complex(val_r, val_i);
         buffer[n] = original[n];
     }

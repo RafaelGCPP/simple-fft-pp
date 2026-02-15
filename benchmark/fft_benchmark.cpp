@@ -1,12 +1,17 @@
 #include <iostream>
 #include <complex>
 #include <utility>
+#include <random>
 #include "simple_fft.h"
+
+std::mt19937 gen(std::random_device{}());
+std::uniform_real_distribution<double> dist(-0.5, 0.5);
+constexpr double timescale_us = 1000000.0 / CLOCKS_PER_SEC;
 
 template <typename T>
 T generate_complex_sample()
 {
-    return T(((double)(random() - 0x40000000) / 0x80000000l), ((double)(random() - 0x40000000) / 0x80000000l));
+    return T(dist(gen), dist(gen));
 }
 
 template<typename CplxT, typename TwidT>
@@ -31,7 +36,7 @@ void fft_benchmark()
         fft.inverse(data);
     }
     unsigned int elapsed = clock() - start;
-    std::cout << elapsed / 10000.0 << "us per operation (forward or inverse)" << std::endl;
+    std::cout << elapsed *timescale_us / 10000.0 << "us per operation (forward or inverse)" << std::endl;
 }
 
 int main()

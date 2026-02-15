@@ -3,6 +3,7 @@
 #include <vector>
 #include <cmath>
 #include <complex>
+#include <numbers> // for std::numbers::pi
 #include <simple_fft.h>
 
 using namespace sfft;
@@ -85,7 +86,7 @@ int test_sine_wave()
     // We use 0.5 amplitude to keep headroom safe
     for (size_t n = 0; n < N; ++n)
     {
-        double angle = 2.0 * M_PI * target_bin * n / N;
+        double angle = 2.0 * std::numbers::pi * target_bin * n / N;
         buffer[n] = Q23Complex(std::sin(angle), 0.0);
     }
 
