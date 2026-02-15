@@ -15,16 +15,13 @@ void rfft_benchmark_size(T *data)
 {
     std::cout << N << "-points real-valued FFT: ";
 
-    using FullTwidGen = sfft::TwiddleGenerator<TwidT, N>;
-
-    auto fft = sfft::RFFT<T, CplxT, FullTwidGen>();
-    auto ifft = sfft::IRFFT<T, CplxT, FullTwidGen>();
+    auto fft = sfft::RFFT<T, CplxT, TwidT, N>();
 
     unsigned int start = clock();
     for (int i = 0; i < 5000; i++)
     {
         fft.process(data);
-        ifft.process(data);
+        fft.inverse(data);
     }
     unsigned int elapsed = clock() - start;
     std::cout << elapsed / 10000.0 << "us per transform" << std::endl;

@@ -1,7 +1,7 @@
 #include <iostream>
 #include <complex>
 #include <utility>
-#include "fft_core.h"
+#include "simple_fft.h"
 
 template <typename T>
 T generate_complex_sample()
@@ -36,8 +36,8 @@ void fft_benchmark()
 
 int main()
 {
-    // rfft_benchmark<float, std::complex<float>, std::complex<float>>();
+    fft_benchmark<std::complex<float>, std::complex<float>>();
     fft_benchmark<std::complex<double>, std::complex<double>>();
-    // fft_benchmark<sfft::Q23, sfft::Q23Complex, sfft::Q31Complex>();
+    fft_benchmark<sfft::Q23Complex, sfft::Q31Complex>();
     return 0;
 }

@@ -2,8 +2,39 @@
 #include <cstddef>
 #include <algorithm> // for std::swap
 
+#include <array>
+
 namespace sfft
 {
+
+    template <typename T, int N>
+    struct TwiddleGenerator
+    {
+        // Precompute twiddle factors at compile time using std::array
+        static constexpr std::array<T, N / 2> twiddles = []()
+        {
+            std::array<T, N / 2> arr{};
+            for (size_t i = 0; i < N / 2; ++i)
+            {
+                arr[i] = T(cos(-2.0 * M_PI * i / N), sin(-2.0 * M_PI * i / N));
+            }
+            return arr;
+        }();
+    };
+
+    template <typename BaseTwidGen, int Stride>
+    struct StridedTwiddleGenerator
+    {
+        struct View
+        {
+            constexpr auto operator[](size_t i) const
+            {
+                return BaseTwidGen::twiddles[i * Stride];
+            }
+        };
+        static constexpr View twiddles{};
+    };
+
     /**
      * @brief Compile-time bit reversal of an index
      */
@@ -67,22 +98,14 @@ namespace sfft
         return value * T(0.5);
     }
 
-    template <typename T, typename U, int N, bool real_input = false>
+    template <typename T, typename U, int N, typename TwidGen = TwiddleGenerator<U, N>>
     class FFT
     {
-    private:
-        U twiddles[N];
 
     public:
-        FFT()
-        {
-            for (size_t i = 0; i < N / 2; ++i)
-            {
-                twiddles[i] = U(cos(-2.0 * M_PI * i / N), sin(-2.0 * M_PI * i / N));
-            }
-        }
+        FFT() = default;
 
-        void process(T *data)
+        auto process(T *data)
         {
             int stride, num_blocks;
             for (stride = N / 2, num_blocks = 1; stride >= 1; stride /= 2, num_blocks *= 2)
@@ -94,7 +117,7 @@ namespace sfft
                     {
                         T a = data[block_start + j];
                         T b = data[block_start + j + stride];
-                        U twiddle = twiddles[j * num_blocks  ];
+                        U twiddle = TwidGen::twiddles[j * num_blocks];
 
                         data[block_start + j] = a + b;
                         T diff = a - b;
@@ -102,9 +125,10 @@ namespace sfft
                     }
                 }
             }
+            return BitReversedView<T, N>(data); // Return a view for bit-reversed access
         }
 
-        void inverse(T *data)
+        auto inverse(T *data)
         {
             int stride, num_blocks;
             for (stride = 1, num_blocks = N / 2; stride < N; stride *= 2, num_blocks /= 2)
@@ -116,13 +140,14 @@ namespace sfft
                     {
                         T a = data[block_start + j];
                         T b = data[block_start + j + stride];
-                        U twiddle = conj(twiddles[j * num_blocks]);
+                        U twiddle = conj(TwidGen::twiddles[j * num_blocks]);
                         b = b * twiddle;
                         data[block_start + j] = scale_in_half(a + b);
                         data[block_start + j + stride] = scale_in_half(a - b);
                     }
                 }
             }
+            return data;
         }
     };
 
