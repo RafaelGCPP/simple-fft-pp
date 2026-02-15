@@ -55,8 +55,8 @@ void rfft_benchmark()
 
 int main()
 {
-    rfft_benchmark<float, std::complex<float>, std::complex<float>>();
+    // rfft_benchmark<float, std::complex<float>, std::complex<float>>();
     rfft_benchmark<double, std::complex<double>, std::complex<double>>();
-    rfft_benchmark<sfft::Q23, sfft::Q23Complex, sfft::Q31Complex>();
+    // rfft_benchmark<sfft::Q23, sfft::Q23Complex, sfft::Q31Complex>();
     return 0;
 }

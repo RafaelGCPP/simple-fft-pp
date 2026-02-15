@@ -181,9 +181,10 @@ struct FixedComplex
         return FixedComplex<T>(
             FixedPoint<T::FractionalBits>(static_cast<int32_t>(real_acc >> OtherB)),
             FixedPoint<T::FractionalBits>(static_cast<int32_t>(imag_acc >> OtherB))
-        );
+        );            
     }
 
+    
 
     constexpr FixedComplex conj() const
     {
