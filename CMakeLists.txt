@@ -13,6 +13,7 @@ add_library(fft_logic INTERFACE)
 target_include_directories(fft_logic INTERFACE 
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+target_compile_features(fft_logic INTERFACE cxx_std_20)
 
 if(BUILD_TESTSET)
     add_subdirectory(tests)

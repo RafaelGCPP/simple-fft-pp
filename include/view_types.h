@@ -2,9 +2,44 @@
 #include <cstddef>
 #include <algorithm> // for std::swap
 #include <bit>       // for std::countr_zero
+#include <concepts>  // for C++20 concepts
+#include <array>     // for std::array
 
 namespace sfft
 {
+
+    /**
+     * @brief Concept for complex number types
+     * 
+     * A type satisfies Complex if it provides:
+     * - real() and imag() methods to access components
+     * - Arithmetic operations (+, -, *)
+     * - Construction from two scalar values
+     * - Compatible with ADL conj() function
+     */
+    template <typename C>
+    concept ComplexType = requires(C c, C other) {
+        // Access to real and imaginary parts
+        { c.real() };
+        { c.imag() };
+        
+        // Arithmetic operations
+        { c + other } -> std::convertible_to<C>;
+        { c - other } -> std::convertible_to<C>;
+        { c * other } -> std::convertible_to<C>;
+    };
+
+    /**
+     * @brief Concept for view types that provide indexed access
+     * 
+     * A type satisfies View if it provides operator[] for element access.
+     * This includes raw pointers, arrays, and custom view classes.
+     */
+    template <typename V>
+    concept IndexableView = requires(V view, size_t i) {
+        // Indexed access (read and write)
+        { view[i] };
+    };
 
     /**
      * @brief Compile-time bit reversal of an index
@@ -39,7 +74,7 @@ namespace sfft
     /**
      * @brief Decorator that provides a linear view and an in-place commit method.
      */
-    template <typename T, size_t N, typename View = T *>
+    template <typename T, size_t N, IndexableView View = T *>
     class BitReversedView
     {
         View _data;
@@ -101,7 +136,7 @@ namespace sfft
         static constexpr size_t size() { return N; }
     };
 
-    template <typename T, typename CplxT>
+    template <typename T, ComplexType CplxT>
     struct InterleavedComplexView
     {
         T *_data;

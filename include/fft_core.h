@@ -11,15 +11,16 @@ namespace sfft
         return value * T(0.5);
     }
 
-    template <typename T, typename U, int N, typename TwidGen = TwiddleGenerator<U, N>>
+    template <ComplexType T, ComplexType U, int N, typename TwidGen = TwiddleGenerator<U, N>>
     class FFT
     {
 
     public:
         FFT() = default;
 
-        template <typename View>
-        constexpr auto process(View data)
+        template <typename ViewT>
+            requires IndexableView<ViewT>
+        constexpr auto process(ViewT data)
         {
             int stride, num_blocks;
             for (stride = N / 2, num_blocks = 1; stride >= 1; stride /= 2, num_blocks *= 2)
@@ -39,11 +40,12 @@ namespace sfft
                     }
                 }
             }
-            return BitReversedView<T, N, View>(data); // Return a view for bit-reversed access
+            return BitReversedView<T, N, ViewT>(data); // Return a view for bit-reversed access
         }
 
-        template <typename View>
-        constexpr auto inverse(View data)
+        template <typename ViewT>
+            requires IndexableView<ViewT>
+        constexpr auto inverse(ViewT data)
         {
             int stride, num_blocks;
             for (stride = 1, num_blocks = N / 2; stride < N; stride *= 2, num_blocks /= 2)

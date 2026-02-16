@@ -143,28 +143,6 @@ int test_sine_wave()
             std::cout << " 🔥 PEAK";
         std::cout << std::endl;
     }
-
-    view.commit(); // Now the buffer is in normal order
-    std::cout << std::endl;
-    std::cout << "Using committed data" << std::endl;
-
-    std::cout << "Raw Idx | Real     | Imag     | Mag" << std::endl;
-    std::cout << "-----------------------------------------------" << std::endl;
-
-    for (size_t i = 0; i < N; ++i)
-    {
-        double mag = get_mag(buffer[i]);
-
-        std::cout << std::setw(7) << i << " | "
-                  << std::fixed << std::setprecision(4)
-                  << std::setw(8) << (double)buffer[i].real() << " | "
-                  << std::setw(8) << (double)buffer[i].imag() << " | "
-                  << std::setw(8) << mag;
-
-        if (mag > 1.0)
-            std::cout << " 🔥 PEAK";
-        std::cout << std::endl;
-    }
     return 0;
 }
 
@@ -194,16 +172,16 @@ int test_known_complex_sequence()
         T(-12.72792, 30.72792)};
 
     auto fft = FFT<T, U, N>();
-    auto view = BitReversedView<T, N>(input);
-    fft.process(input);
-    view.commit(); // Ensure data is in normal order for comparison
+    auto view = fft.process(input);
+    
+
     std::cout << "Index | Real       | Imag       | Mag        | Expected Real | Expected Imag | Expected Mag | Abs Error" << std::endl;
     std::cout << "--------------------------------------------------------------------------------------------------------" << std::endl;
     bool pass = true;
     for (size_t i = 0; i < N; ++i)
     {
-        double r = (double)input[i].real();
-        double img = (double)input[i].imag();
+        double r = (double)view[i].real();
+        double img = (double)view[i].imag();
         double mag = std::sqrt(r * r + img * img);
         double exp_r = (double)expected_fft[i].real();
         double exp_img = (double)expected_fft[i].imag();
@@ -259,17 +237,16 @@ int test_ifft_known_complex_sequence()
         T(-12.72792, 30.72792)};
 
     auto fft = FFT<T, U, N>();
-    auto view = BitReversedView<T, N>(input);
-    view.commit(); // Ensure data is bitreversed for IFFT
+    auto view = BitReversedView<T, N>(input); // Ensure data is bitreversed for IFFT
 
-    fft.inverse(input);
+    fft.inverse(view);
     std::cout << "Index | Real       | Imag       | Mag        | Expected Real | Expected Imag | Expected Mag | Abs Error" << std::endl;
     std::cout << "--------------------------------------------------------------------------------------------------------" << std::endl;
     bool pass = true;
     for (size_t i = 0; i < N; ++i)
     {
-        double r = (double)input[i].real();
-        double img = (double)input[i].imag();
+        double r = (double)view[i].real();
+        double img = (double)view[i].imag();
         double mag = std::sqrt(r * r + img * img);
         double exp_r = (double)expected_result[i].real();
         double exp_img = (double)expected_result[i].imag();

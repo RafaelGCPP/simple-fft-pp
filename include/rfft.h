@@ -6,7 +6,7 @@
 namespace sfft
 {
 
-    template <typename T, typename CplxT, typename U, int N>
+    template <typename T, ComplexType CplxT, ComplexType U, int N>
     class RFFT_View
     {
 
@@ -107,7 +107,7 @@ namespace sfft
         }
     };
 
-    template <typename T, typename CplxT, typename U, int N, typename TwidGen = TwiddleGenerator<U, N>>
+    template <typename T, ComplexType CplxT, ComplexType U, int N, typename TwidGen = TwiddleGenerator<U, N>>
     class RFFT
     {
     public:
