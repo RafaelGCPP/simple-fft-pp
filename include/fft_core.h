@@ -53,6 +53,21 @@ namespace sfft
         return result;
     }
 
+    template <size_t N>
+    struct BitReversalPermutation
+    {
+        static constexpr std::array<size_t, N> indices = []()
+        {
+            std::array<size_t, N> arr{};
+            constexpr size_t bits = std::countr_zero(N);
+            for (size_t i = 0; i < N; ++i)
+            {
+                arr[i] = reverse_bits<bits>(i);
+            }
+            return arr;
+        }();
+    };
+
     /**
      * @brief Decorator that provides a linear view and an in-place commit method.
      */
@@ -63,28 +78,28 @@ namespace sfft
         static constexpr size_t _bits = std::countr_zero(N);
 
     public:
-        explicit BitReversedView(T *data) : _data(data) {}
+        constexpr explicit BitReversedView(T *data) : _data(data) {}
 
         // Accessor (The "Decorator" part)
         constexpr T &operator[](size_t index)
         {
-            return _data[reverse_bits<_bits>(index)];
+            return _data[BitReversalPermutation<N>::indices[index]];
         }
 
         constexpr const T &operator[](size_t index) const
         {
-            return _data[reverse_bits<_bits>(index)];
+            return _data[BitReversalPermutation<N>::indices[index]];
         }
 
         /**
          * @brief "Commits" the bit-reversal by physically reordering the data in RAM.
          * This makes the buffer linear so standard pointers/loops work.
          */
-        void commit()
+        constexpr void commit()
         {
             for (size_t i = 0; i < N; ++i)
             {
-                size_t j = reverse_bits<_bits>(i);
+                size_t j = BitReversalPermutation<N>::indices[i];
                 if (i < j)
                 {
                     std::swap(_data[i], _data[j]);
@@ -105,7 +120,7 @@ namespace sfft
          * @endcode
          */
         template <typename Func>
-        void transform(Func &&f)
+        constexpr void transform(Func &&f)
         {
             for (size_t i = 0; i < N; ++i)
             {
@@ -129,7 +144,7 @@ namespace sfft
     public:
         FFT() = default;
 
-        auto process(T *data)
+        constexpr auto process(T *data)
         {
             int stride, num_blocks;
             for (stride = N / 2, num_blocks = 1; stride >= 1; stride /= 2, num_blocks *= 2)
@@ -152,7 +167,7 @@ namespace sfft
             return BitReversedView<T, N>(data); // Return a view for bit-reversed access
         }
 
-        auto inverse(T *data)
+        constexpr auto inverse(T *data)
         {
             int stride, num_blocks;
             for (stride = 1, num_blocks = N / 2; stride < N; stride *= 2, num_blocks /= 2)
