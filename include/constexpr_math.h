@@ -1,31 +1,14 @@
 #pragma once
 
 #include <limits>
+#include <numbers>
 
 namespace sfft
 {
     namespace math
     {
 
-        constexpr double pi = 3.14159265358979323846;
-
-        // Constexpr implementation of power function
-        constexpr double pow(double base, int exp)
-        {
-            double res = 1.0;
-            for (int i = 0; i < exp; ++i)
-                res *= base;
-            return res;
-        }
-
-        // Constexpr implementation of factorial
-        constexpr double factorial(int n)
-        {
-            double res = 1.0;
-            for (int i = 2; i <= n; ++i)
-                res *= i;
-            return res;
-        }
+        constexpr double pi = std::numbers::pi;
 
         // Normalize angle to range [-pi, pi]
         constexpr double normalize_angle(double x)
