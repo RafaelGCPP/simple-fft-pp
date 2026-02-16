@@ -43,8 +43,7 @@ namespace sfft
             return BitReversedView<T, N, ViewT>(data); // Return a view for bit-reversed access
         }
 
-        template <typename ViewT>
-            requires IndexableView<ViewT>
+        template <IndexableView ViewT>
         constexpr auto inverse(ViewT data)
         {
             int stride, num_blocks;
