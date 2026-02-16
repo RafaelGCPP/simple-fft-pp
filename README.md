@@ -34,8 +34,13 @@ int main() {
     // ... populate data ...
 
     auto fft = ComplexFFT64();
-    fft.process(data);    // Forward FFT (output in bit-reversed order)
-    fft.inverse(data);    // Inverse FFT (output in natural order)
+    auto view = fft.process(data);    // Forward FFT (bit-reversed storage)
+
+    // Access bins in natural order through the view
+    auto bin5 = view[5];
+
+    // Inverse expects the bit-reversed buffer produced by process()
+    fft.inverse(data);    // Output in natural order (scaled by 1/N)
     // data is restored
 }
 ```
@@ -51,8 +56,10 @@ int main() {
     // ... populate data ...
 
     auto fft = FixedFFT128Q23();
-    fft.process(data);    // Forward FFT
-    fft.inverse(data);    // Inverse FFT
+    auto view = fft.process(data);    // Forward FFT (bit-reversed storage)
+    (void)view; // Use view for natural-order access if needed
+
+    fft.inverse(data);    // Inverse FFT (scaled by 1/N)
     // data is restored
 }
 ```
@@ -71,8 +78,9 @@ int main()
     ComplexType signal[64];
     // ... populate signal ...
 
-    fft.process(signal);  // Forward FFT (output in bit-reversed order)
-    fft.inverse(signal);  // Inverse FFT (output in natural order)
+    auto view = fft.process(signal);  // Forward FFT (bit-reversed storage)
+    (void)view;
+    fft.inverse(signal);  // Inverse FFT (output in natural order, scaled by 1/N)
     // signal is now restored (approximately, modulo numerical errors)
     
     return 0;
@@ -97,7 +105,7 @@ int main() {
 
     auto rfft = RFFT<RealType, ComplexType, ComplexType, N>();
 
-    // Forward: N real samples → N/2+1 unique spectral bins
+    // Forward: N real samples -> N/2+1 unique spectral bins
     auto view = rfft.process(buffer);
 
     // Access any bin in O(1)
@@ -111,7 +119,7 @@ int main() {
     });
 
     // Inverse: reconstruct filtered signal in-place
-    rfft.inverse(buffer);
+    rfft.inverse(buffer); // Output is scaled by 1/N
     // buffer now contains the filtered real signal
 }
 ```
@@ -127,7 +135,8 @@ using namespace sfft;
 
 void process_audio_chunk(Q15Complex* buffer) {
     auto fft = FixedFFT128Q15();
-    fft.process(buffer);
+    auto view = fft.process(buffer);
+    (void)view;
     // buffer now contains frequency bins in bit-reversed order.
     // Useful for spectral display or detecting dominant frequencies.
 }
@@ -145,8 +154,9 @@ extern const std::complex<double> bit_reversed_filter_mask[256];
 void apply_filter(std::complex<double>* signal) {
     auto fft = ComplexDoubleFFT256();
     
-    // 1. Transform to frequency domain (Output is bit-reversed)
-    fft.process(signal);
+    // 1. Transform to frequency domain (bit-reversed storage)
+    auto view = fft.process(signal);
+    (void)view;
 
     // 2. Apply filter mask (Element-wise multiplication)
     // No bit-reversal needed because the mask matches the FFT output order
@@ -222,7 +232,9 @@ Output (bit-reversed)      Input (bit-reversed)
 
 ### Bit-Reversal Decorator
 
-For cases where you need to manipulate bit-reversed data or perform explicit reordering, the library provides a **`BitReversedView`** decorator:
+`FFT::process()` returns a `BitReversedView` so you can access bins in natural order without physically reordering the buffer.
+
+The library provides a **`BitReversedView`** decorator for cases where you need to manipulate bit-reversed data:
 
 ```cpp
 #include "fft_core.h"
@@ -237,17 +249,11 @@ BitReversedView<std::complex<double>, 64> view(data.data());
 // Access element at logical index 5 (physically bit-reversed)
 auto element = view[5];  // Returns data at bit-reversed index
 
-// Apply in-place transformations without committing the bit-reversal
+// Apply in-place transformations using natural indices
 view.transform([](size_t k, std::complex<double> val) {
     if (k > 20) return std::complex<double>(0.0, 0.0);  // Zero out high frequencies
     return val;
 });
-
-// Commit the bit-reversal: physically reorder data in-place
-view.commit();  // Now data is physically bit-reversed
-
-// Subsequent access is O(1) without reversals
-auto element2 = data[5];  // Direct access to reordered data
 ```
 
 **Use Cases**:
@@ -256,13 +262,13 @@ auto element2 = data[5];  // Direct access to reordered data
   Access specific frequency bins by their natural index without reordering the entire array. Useful when you only need to check a few dominant frequencies.
 
 - **In-Place Spectral Filtering**:
-  Apply transformations using the `transform()` method while the data remains in bit-reversed order, avoiding the overhead of reordering twice.
+  Apply transformations using the `transform()` method with natural indices while the underlying data remains in bit-reversed order.
 
-- **Interfacing with Other Libraries**:
-  Bridge the gap between this library's bit-reversed output and other algorithms (or visualization tools) that expect data in natural sequence.
+- **Natural-Order Access**:
+  Access specific frequency bins by their natural index without needing to understand or manually compute bit-reversed indices.
 
 - **Spectral Manipulation**:
-  Simplify operations like zero-padding (for interpolation) or applying complex frequency masks where reasoning about index mapping is difficult in bit-reversed order.
+  Simplify operations like zero-padding or applying frequency masks by working with intuitive sequential indices.
 
 ## Fixed-Point Types
 
@@ -290,7 +296,7 @@ For FFT operations, scalar types are wrapped in `FixedComplex<T>`, which mimics 
 
 These types support standard complex arithmetic (conjugate, magnitude squared, multiplication) and can be mixed with `std::complex` for convenience during setup or testing.
 
-Operations between different formats are automatically handled with appropriate scaling.
+Operations between different formats are handled with aligned scaling for add/sub and rounded scaling for multiply.
 
 ## Architecture
 
@@ -301,7 +307,8 @@ include/
 ├── fixed_point.h           — FixedPoint<B>, FixedComplex<T>, mixed-precision arithmetic
 ├── rfft.h                  — RFFT, RFFT_View (real-valued FFT)
 ├── simple_fft.h            — Convenience aliases for fixed-point FFTs (FixedFFT64Q23, etc.)
-└── simple_fft_complex.h    — Convenience aliases for std::complex<float/double> FFTs (ComplexFFT64, etc.)
+├── simple_fft_complex.h    — Convenience aliases for std::complex<float/double> FFTs (ComplexFFT64, etc.)
+└── view_types.h            — BitReversedView, InterleavedComplexView, view concepts
 ```
 
 ## Compiler Support

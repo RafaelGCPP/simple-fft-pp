@@ -18,7 +18,7 @@ Given $N$ real samples $x[0], x[1], \ldots, x[N-1]$, we form $N/2$ complex value
 
 $$z[n] = x[2n] + j \cdot x[2n+1], \quad n = 0, 1, \ldots, \frac{N}{2} - 1$$
 
-This is equivalent to reinterpreting the real array as a complex array of half the length — a zero-cost operation via `reinterpret_cast`.
+This is equivalent to viewing the real array as interleaved complex pairs — a zero-cost operation via `InterleavedComplexView`.
 
 ### 2.2 Relationship Between $Z[k]$ and $X[k]$
 
@@ -98,7 +98,7 @@ Template parameters:
 ```cpp
 static auto process(T *data)
 {
-    auto cdata = reinterpret_cast<CplxT *>(data);
+     auto cdata = InterleavedComplexView<T, CplxT>(data);
 
     using TwidGen = TwiddleGenerator<U, N>;
     using StrideGen = StridedTwiddleGenerator<TwidGen, 2>;
@@ -115,7 +115,7 @@ static auto process(T *data)
 2. **FFT**: Compute the $N/2$-point complex DIF FFT. The twiddle generator is strided by 2, which selects every other twiddle from the $N$-point table — exactly the twiddles needed for an $N/2$-point FFT.
 3. **Return View**: Instead of materializing the full spectrum, return an `RFFT_View` that lazily unpacks bins on demand.
 
-After this call, the buffer contains $Z[k]$ in **bit-reversed order** (the natural output of a DIF FFT).
+After this call, the buffer contains $Z[k]$ in **bit-reversed order** (the natural output of a DIF FFT). `RFFT_View` wraps the packed buffer in a `BitReversedView`, so `operator[]` uses natural indices regardless of physical layout.
 
 ### 3.3 Spectral Access: `RFFT_View::operator[]`
 
@@ -194,7 +194,7 @@ Z[0] = ((DC + Nyquist) / 2) + j * ((DC - Nyquist) / 2)
 ```cpp
 static T *inverse(T *data)
 {
-    auto cdata = reinterpret_cast<CplxT *>(data);
+     auto cdata = InterleavedComplexView<T, CplxT>(data);
 
     using TwidGen = TwiddleGenerator<U, N>;
     using StrideGen = StridedTwiddleGenerator<TwidGen, 2>;
@@ -205,7 +205,7 @@ static T *inverse(T *data)
 }
 ```
 
-The inverse assumes the buffer contains valid packed complex data $Z[k]$ (in bit-reversed order). It runs the $N/2$-point complex DIT IFFT using the `inverse()` method of the FFT class, which produces $z[n]$ in natural order. Since $z[n] = x[2n] + j \cdot x[2n+1]$, the real array is automatically reconstructed in-place.
+The inverse assumes the buffer contains valid packed complex data $Z[k]$ (in bit-reversed order). It runs the $N/2$-point complex DIT IFFT using the `inverse()` method of the FFT class, which produces $z[n]$ in natural order. Since $z[n] = x[2n] + j \cdot x[2n+1]$, the real array is automatically reconstructed in-place. The `inverse()` path also applies the $1/N$ scaling via per-stage halving.
 
 ## 4. Data Flow Diagram
 
@@ -213,7 +213,7 @@ The inverse assumes the buffer contains valid packed complex data $Z[k]$ (in bit
 Real input x[0..N-1]
         │
         ▼
-   reinterpret_cast ──► z[0..N/2-1]  (complex, zero-cost)
+     InterleavedComplexView ──► z[0..N/2-1]  (complex, zero-cost)
         │
         ▼
    N/2-point DIF FFT ──► Z[k]  (bit-reversed)

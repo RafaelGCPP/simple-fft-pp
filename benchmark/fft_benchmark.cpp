@@ -2,6 +2,7 @@
 #include <complex>
 #include <utility>
 #include <random>
+#include <ctime>
 #include "simple_fft.h"
 
 std::mt19937 gen(std::random_device{}());
@@ -14,10 +15,33 @@ T generate_complex_sample()
     return T(dist(gen), dist(gen));
 }
 
-template<typename CplxT, typename TwidT>
+template <typename CplxT, typename TwidT, int N>
+void fft_benchmark_size(CplxT *data)
+{
+    std::cout << N << "-points complex FFT: ";
+
+    auto fft = sfft::FFT<CplxT, TwidT, N>();
+
+    unsigned int start = clock();
+    for (int i = 0; i < 5000; i++)
+    {
+        fft.process(data);
+        fft.inverse(data);
+    }
+    unsigned int elapsed = clock() - start;
+    std::cout << elapsed * timescale_us / 10000.0 << "us per transform" << std::endl;
+}
+
+template <typename CplxT, typename TwidT, int... Ns>
+void fft_benchmark_sizes(CplxT *data, std::integer_sequence<int, Ns...>)
+{
+    (fft_benchmark_size<CplxT, TwidT, Ns>(data), ...);
+}
+
+template <typename CplxT, typename TwidT>
 void fft_benchmark()
 {
-    std::cout << "-=-=-=-=-=-= Complex FFT benchmark =-=-=-=-=-=-" << std::endl;
+    std::cout << "-=-=-=-=-=-= Complex FFT benchmark - " << typeid(CplxT).name() << " =-=-=-=-=-=-" << std::endl;
 
     CplxT data[2048];
 
@@ -27,16 +51,8 @@ void fft_benchmark()
         data[i] = generate_complex_sample<CplxT>();
     }
 
-    auto fft = sfft::FFT<CplxT, TwidT, 2048>();
-
-    unsigned int start = clock();
-    for (int i = 0; i < 5000; i++)
-    {
-        fft.process(data);
-        fft.inverse(data);
-    }
-    unsigned int elapsed = clock() - start;
-    std::cout << elapsed *timescale_us / 10000.0 << "us per operation (forward or inverse)" << std::endl;
+    fft_benchmark_sizes<CplxT, TwidT>(data,
+        std::integer_sequence<int, 8, 16, 32, 64, 128, 256, 512, 1024, 2048>{});
 }
 
 int main()
