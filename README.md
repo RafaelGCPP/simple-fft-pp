@@ -5,7 +5,7 @@ A **header-only C++20 library** that generates fully unrolled, statically dispat
 The library provides:
 
 - **Complex FFT / IFFT** — arbitrary power-of-2 sizes, both floating-point and fixed-point
-- **Real FFT / IRFFT** — computes the spectrum of real-valued signals at half the cost, with an in-place spectral manipulation API
+- **Real FFT / Inverse RFFT** — computes the spectrum of real-valued signals at half the cost, with an in-place spectral manipulation API
 - **Fixed-point arithmetic** — Q15, Q23, Q31 types with mixed-precision operations, no floats required at runtime
 
 > **This is not a general-purpose FFT library.** It is designed for scenarios where the FFT size is known at compile time and the priority is deterministic, allocation-free execution on resource-constrained hardware.
@@ -26,15 +26,16 @@ The library provides:
 ### Complex FFT (Floating-Point)
 
 ```cpp
-#include "simple_fft_complex.h"   // convenience aliases for std::complex<double>
+#include "simple_fft_complex.h"   // convenience aliases for std::complex<float>
 using namespace sfft;
 
 int main() {
-    std::complex<double> data[64];
+    Complex data[64];
     // ... populate data ...
 
-    ComplexFFT64::process(data);    // Forward FFT (output in bit-reversed order)
-    ComplexIFFT64::process(data);   // Inverse FFT (output in natural order)
+    auto fft = ComplexFFT64();
+    fft.process(data);    // Forward FFT (output in bit-reversed order)
+    fft.inverse(data);    // Inverse FFT (output in natural order)
     // data is restored
 }
 ```
@@ -49,8 +50,9 @@ int main() {
     Q23Complex data[128];
     // ... populate data ...
 
-    FixedFFT128Q23::process(data);    // Forward FFT
-    FixedIFFT128Q23::process(data);   // Inverse FFT
+    auto fft = FixedFFT128Q23();
+    fft.process(data);    // Forward FFT
+    fft.inverse(data);    // Inverse FFT
     // data is restored
 }
 ```
@@ -63,15 +65,14 @@ using namespace sfft;
 
 int main()
 {
-    using TwidGen = TwiddleGenerator<std::complex<double>, 64>;
-    using FwdFFT = FFT<std::complex<double>, TwidGen>;
-    using InvFFT = IFFT<std::complex<double>, TwidGen>;
+    using ComplexType = std::complex<double>;
+    auto fft = FFT<ComplexType, ComplexType, 64>();
 
-    std::complex<double> signal[64];
+    ComplexType signal[64];
     // ... populate signal ...
 
-    FwdFFT::process(signal);  // Forward FFT (output in bit-reversed order)
-    InvFFT::process(signal);  // Inverse FFT (output in natural order)
+    fft.process(signal);  // Forward FFT (output in bit-reversed order)
+    fft.inverse(signal);  // Inverse FFT (output in natural order)
     // signal is now restored (approximately, modulo numerical errors)
     
     return 0;
@@ -88,26 +89,29 @@ using namespace sfft;
 
 int main() {
     const size_t N = 256;
-    double buffer[N];
+    using ComplexType = std::complex<double>;
+    using RealType = ComplexType::value_type;
+    
+    RealType buffer[N];
     // ... fill buffer with real-valued samples ...
 
-    using TwidGen = TwiddleGenerator<std::complex<double>, N>;
+    auto rfft = RFFT<RealType, ComplexType, ComplexType, N>();
 
     // Forward: N real samples → N/2+1 unique spectral bins
-    auto view = RFFT<double, std::complex<double>, TwidGen>::process(buffer);
+    auto view = rfft.process(buffer);
 
     // Access any bin in O(1)
     auto dc = view[0];
     auto bin5 = view[5];
 
     // In-place low-pass filter: zero out bins above cutoff
-    view.transform([](size_t k, std::complex<double> val) {
-        if (k > 20) return std::complex<double>(0.0, 0.0);
+    view.transform([](size_t k, ComplexType val) {
+        if (k > 20) return ComplexType(0.0, 0.0);
         return val;
     });
 
     // Inverse: reconstruct filtered signal in-place
-    IRFFT<double, std::complex<double>, TwidGen>::process(buffer);
+    rfft.inverse(buffer);
     // buffer now contains the filtered real signal
 }
 ```
@@ -120,10 +124,10 @@ Analyze audio chunks for equalization or visualization.
 // 128-point FFT for a small audio buffer
 // Input: Q15 audio samples (e.g. from a microphone ADC)
 using namespace sfft;
-using AudioFFT = FFT<Q15Complex, TwiddleGenerator<Q31Complex, 128>>;
 
 void process_audio_chunk(Q15Complex* buffer) {
-    AudioFFT::process(buffer);
+    auto fft = FixedFFT128Q15();
+    fft.process(buffer);
     // buffer now contains frequency bins in bit-reversed order.
     // Useful for spectral display or detecting dominant frequencies.
 }
@@ -134,15 +138,15 @@ Efficiently apply filters in the frequency domain. Since the Forward FFT produce
 ```cpp
 // 256-point FFT/IFFT for filtering
 using namespace sfft;
-using FwdFFT = FFT<std::complex<double>, TwiddleGenerator<std::complex<double>, 256>>;
-using InvFFT = IFFT<std::complex<double>, TwiddleGenerator<std::complex<double>, 256>>;
 
 // Pre-calculated filter coefficients stored in BIT-REVERSED order
 extern const std::complex<double> bit_reversed_filter_mask[256];
 
 void apply_filter(std::complex<double>* signal) {
+    auto fft = ComplexDoubleFFT256();
+    
     // 1. Transform to frequency domain (Output is bit-reversed)
-    FwdFFT::process(signal);
+    fft.process(signal);
 
     // 2. Apply filter mask (Element-wise multiplication)
     // No bit-reversal needed because the mask matches the FFT output order
@@ -151,7 +155,7 @@ void apply_filter(std::complex<double>* signal) {
     }
 
     // 3. Transform back to time domain (Input bit-reversed -> Output natural)
-    InvFFT::process(signal);
+    fft.inverse(signal);
 }
 ```
 
@@ -163,16 +167,19 @@ using namespace sfft;
 
 void apply_lowpass(double* signal) {
     const size_t N = 256;
-    using TwidGen = TwiddleGenerator<std::complex<double>, N>;
+    using ComplexType = std::complex<double>;
+    using RealType = ComplexType::value_type;
+    
+    auto rfft = RFFT<RealType, ComplexType, ComplexType, N>();
 
-    auto view = RFFT<double, std::complex<double>, TwidGen>::process(signal);
+    auto view = rfft.process(signal);
 
-    view.transform([](size_t k, std::complex<double> val) {
-        if (k > 20) return std::complex<double>(0.0, 0.0);
+    view.transform([](size_t k, ComplexType val) {
+        if (k > 20) return ComplexType(0.0, 0.0);
         return val;
     });
 
-    IRFFT<double, std::complex<double>, TwidGen>::process(signal);
+    rfft.inverse(signal);
 }
 ```
 
@@ -260,7 +267,7 @@ The library uses a generic `FixedPoint<B>` template where `B` specifies the numb
 | Q23  | `FixedPoint<23>` | [-256, 256)       | ~1.19e-7  |
 | Q31  | `FixedPoint<31>` | [-1, 1)           | ~4.66e-10 |
 
-*Note: The underlying storage is always `int32_t`. Adjust `B` to trade off between integer range (bits = 31 - B) and fractional precision.*
+*Note: The underlying storage is always `int32_t` (32 bits). The integer part uses (31 - B) bits, and the fractional part uses B bits. The range is approximately [−2^(31−B), 2^(31−B)) and the resolution is 2^−B.*
 
 ### Complex Counterparts
 
@@ -280,12 +287,12 @@ Operations between different formats are automatically handled with appropriate 
 
 ```
 include/
-├── fft_core.h              — FFT/IFFT engines, DIF/DIT butterflies, BitReversedView
-├── twiddles.h              — Compile-time twiddle factor generation (quadrant symmetry)
+├── fft_core.h              — FFT engine, DIF/DIT butterflies, BitReversedView, TwiddleGenerator
+├── constexpr_math.h         — Compile-time sin/cos/pi for twiddle factor generation
 ├── fixed_point.h           — FixedPoint<B>, FixedComplex<T>, mixed-precision arithmetic
-├── rfft.h                  — RFFT, IRFFT, RFFT_View (real-valued FFT)
+├── rfft.h                  — RFFT, RFFT_View (real-valued FFT)
 ├── simple_fft.h            — Convenience aliases for fixed-point FFTs (FixedFFT64Q23, etc.)
-└── simple_fft_complex.h    — Convenience aliases for std::complex<double> FFTs (ComplexFFT64, etc.)
+└── simple_fft_complex.h    — Convenience aliases for std::complex<float/double> FFTs (ComplexFFT64, etc.)
 ```
 
 ## Compiler Support
@@ -302,20 +309,16 @@ The library includes comprehensive test suites:
 - `roundtrip_tests.cpp` — Signal reconstruction (FFT → IFFT)
 - `rfft_tests.cpp` — Real FFT correctness, spectral transform round-trip
 - `fixed_point_tests.cpp` — Arithmetic correctness for fixed-point types
-- `butterfly_tests.cpp` — Individual butterfly operation verification
-- `twiddles_test.cpp` — Twiddle factor accuracy
 
 Run with:
 ```bash
 mkdir build && cd build
 cmake ..
 make
-./fft_tests
-./roundtrip_tests
-./rfft_tests
-./fixed_point_tests
-./butterfly_tests
-./twiddles_test
+./tests/fft_tests
+./tests/roundtrip_tests
+./tests/rfft_tests
+./tests/fixed_point_tests
 ```
 
 ## License

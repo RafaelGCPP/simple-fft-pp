@@ -1,6 +1,6 @@
 # Real FFT (RFFT) — Theory and Implementation
 
-This document explains the mathematical foundation behind the Real FFT and how it is implemented in this library through the `RFFT`, `IRFFT`, and `RFFT_View` classes.
+This document explains the mathematical foundation behind the Real FFT and how it is implemented in this library through the `RFFT` and `RFFT_View` classes.
 
 ## 1. Motivation
 
@@ -80,18 +80,18 @@ $$Z[0] = \frac{X[0] + X[\tfrac{N}{2}]}{2} + j \cdot \frac{X[0] - X[\tfrac{N}{2}]
 
 ### 3.1 Class Overview
 
-The implementation consists of three classes:
+The implementation consists of two classes:
 
 | Class | Purpose |
-|-------|---------|
-| `sfft::RFFT<T, CplxT, TwidGen>` | Executes the forward Real FFT |
-| `sfft::IRFFT<T, CplxT, TwidGen>` | Executes the inverse Real FFT |
-| `sfft::RFFT_View<T, CplxT, TwidGen>` | Provides unpacked spectral access and in-place transform |
+|-------|---------|  
+| `sfft::RFFT<T, CplxT, U, N>` | Executes both forward and inverse Real FFT |
+| `sfft::RFFT_View<T, CplxT, U, N>` | Provides unpacked spectral access and in-place transform |
 
 Template parameters:
-- `T` — scalar type (e.g., `double`, `Q23`)
-- `CplxT` — complex type (e.g., `std::complex<double>`, `Q23Complex`)
-- `TwidGen` — twiddle generator for the **full** $N$-point FFT (e.g., `TwiddleGenerator<CplxT, N>`)
+- `T` — scalar real type (e.g., `double`, `Q23`)
+- `CplxT` — complex type for the data (e.g., `std::complex<double>`, `Q23Complex`)
+- `U` — complex type for twiddle factors (e.g., `std::complex<double>`, `Q31Complex`)
+- `N` — FFT size (power of 2)
 
 ### 3.2 Forward Transform: `RFFT::process`
 
@@ -100,10 +100,12 @@ static auto process(T *data)
 {
     auto cdata = reinterpret_cast<CplxT *>(data);
 
+    using TwidGen = TwiddleGenerator<U, N>;
     using StrideGen = StridedTwiddleGenerator<TwidGen, 2>;
-    FFT<CplxT, StrideGen>::process(cdata);
+    auto fft = FFT<CplxT, U, N / 2, StrideGen>();
+    fft.process(cdata);
 
-    return RFFT_View<T, CplxT, TwidGen>(data);
+    return RFFT_View<T, CplxT, U, N>(data);
 }
 ```
 
@@ -151,14 +153,19 @@ This method allows modifying the spectrum in-place without explicitly unpacking 
 
 ```cpp
 using namespace sfft;
-auto view = RFFT<double, std::complex<double>, TwidGen>::process(buffer);
+const size_t N = 256;
+using ComplexType = std::complex<double>;
+using RealType = ComplexType::value_type;
 
-view.transform([](size_t k, std::complex<double> val) {
-    if (k > 5) return std::complex<double>(0.0, 0.0);
+auto rfft = RFFT<RealType, ComplexType, ComplexType, N>();
+auto view = rfft.process(buffer);
+
+view.transform([](size_t k, ComplexType val) {
+    if (k > 5) return ComplexType(0.0, 0.0);
     return val;
 });
 
-IRFFT<double, std::complex<double>, TwidGen>::process(buffer);
+rfft.inverse(buffer);
 ```
 
 ### 3.5 Repacking: `set_internal_packed`
@@ -182,21 +189,23 @@ For the DC/Nyquist case ($k = 0$):
 Z[0] = ((DC + Nyquist) / 2) + j * ((DC - Nyquist) / 2)
 ```
 
-### 3.6 Inverse Transform: `IRFFT::process`
+### 3.6 Inverse Transform: `RFFT::inverse`
 
 ```cpp
-static T *process(T *data)
+static T *inverse(T *data)
 {
     auto cdata = reinterpret_cast<CplxT *>(data);
 
+    using TwidGen = TwiddleGenerator<U, N>;
     using StrideGen = StridedTwiddleGenerator<TwidGen, 2>;
-    IFFT<CplxT, StrideGen>::process(cdata);
+    auto fft = FFT<CplxT, U, N / 2, StrideGen>();
+    fft.inverse(cdata);
 
     return data;
 }
 ```
 
-The inverse assumes the buffer contains valid packed complex data $Z[k]$ (in bit-reversed order). It runs the $N/2$-point complex DIT IFFT, which produces $z[n]$ in natural order. Since $z[n] = x[2n] + j \cdot x[2n+1]$, the real array is automatically reconstructed in-place.
+The inverse assumes the buffer contains valid packed complex data $Z[k]$ (in bit-reversed order). It runs the $N/2$-point complex DIT IFFT using the `inverse()` method of the FFT class, which produces $z[n]$ in natural order. Since $z[n] = x[2n] + j \cdot x[2n+1]$, the real array is automatically reconstructed in-place.
 
 ## 4. Data Flow Diagram
 
@@ -218,7 +227,7 @@ Real input x[0..N-1]
    │   set_internal_packed  ──► repack Z[k]
    │
    ▼
-   N/2-point DIT IFFT ──► z[n]  (natural order)
+   N/2-point DIT IFFT (via inverse()) ──► z[n]  (natural order)
         │
         ▼
    Real output x[0..N-1]  (in-place)
@@ -231,6 +240,6 @@ Real input x[0..N-1]
 | Forward RFFT | $O(\frac{N}{2} \log \frac{N}{2})$ | In-place |
 | `operator[k]` | $O(1)$ | No allocation |
 | `transform(f)` | $O(N)$ | In-place |
-| Inverse IRFFT | $O(\frac{N}{2} \log \frac{N}{2})$ | In-place |
+| Inverse RFFT | $O(\frac{N}{2} \log \frac{N}{2})$ | In-place |
 
 The entire pipeline operates **in-place** on the original real buffer — no auxiliary memory is allocated.
