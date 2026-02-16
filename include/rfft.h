@@ -50,11 +50,9 @@ namespace sfft
     class RFFT_View
     {
 
-
         using TwidGen = TwiddleGenerator<U, N>;
         using ViewType = InterleavedComplexView<T, CplxT>;
         BitReversedView<CplxT, N / 2, ViewType> _buffer;
-
 
     public:
         constexpr RFFT_View(T *data) : _buffer(ViewType(data)) {}

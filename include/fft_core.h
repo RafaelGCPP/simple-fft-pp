@@ -1,7 +1,7 @@
 #pragma once
 #include <cstddef>
 #include <algorithm> // for std::swap
-#include <numbers> // for std::numbers::pi
+#include <numbers>   // for std::numbers::pi
 #include <array>
 #include <bit> // for std::countr_zero
 #include "constexpr_math.h"
@@ -112,7 +112,7 @@ namespace sfft
         /**
          * @brief Apply a transform function to all elements in-place.
          * @param f Function taking (size_t index, T value) and returning T
-         * 
+         *
          * Example:
          * @code
          * view.transform([](size_t k, Complex val) {

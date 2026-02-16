@@ -189,7 +189,7 @@ namespace sfft
         }
 
         template <int OtherB>
-        constexpr FixedComplex& operator*=(const FixedComplex<FixedPoint<OtherB>> &other)
+        constexpr FixedComplex &operator*=(const FixedComplex<FixedPoint<OtherB>> &other)
         {
             *this = *this * other;
             return *this;
