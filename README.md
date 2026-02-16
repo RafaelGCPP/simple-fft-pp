@@ -237,6 +237,12 @@ BitReversedView<std::complex<double>, 64> view(data.data());
 // Access element at logical index 5 (physically bit-reversed)
 auto element = view[5];  // Returns data at bit-reversed index
 
+// Apply in-place transformations without committing the bit-reversal
+view.transform([](size_t k, std::complex<double> val) {
+    if (k > 20) return std::complex<double>(0.0, 0.0);  // Zero out high frequencies
+    return val;
+});
+
 // Commit the bit-reversal: physically reorder data in-place
 view.commit();  // Now data is physically bit-reversed
 
@@ -248,6 +254,9 @@ auto element2 = data[5];  // Direct access to reordered data
 
 - **Sparse Access / Lazy Evaluation**:
   Access specific frequency bins by their natural index without reordering the entire array. Useful when you only need to check a few dominant frequencies.
+
+- **In-Place Spectral Filtering**:
+  Apply transformations using the `transform()` method while the data remains in bit-reversed order, avoiding the overhead of reordering twice.
 
 - **Interfacing with Other Libraries**:
   Bridge the gap between this library's bit-reversed output and other algorithms (or visualization tools) that expect data in natural sequence.

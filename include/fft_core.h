@@ -92,6 +92,27 @@ namespace sfft
             }
         }
 
+        /**
+         * @brief Apply a transform function to all elements in-place.
+         * @param f Function taking (size_t index, T value) and returning T
+         * 
+         * Example:
+         * @code
+         * view.transform([](size_t k, Complex val) {
+         *     if (k > 20) return Complex(0.0, 0.0);
+         *     return val;
+         * });
+         * @endcode
+         */
+        template <typename Func>
+        void transform(Func &&f)
+        {
+            for (size_t i = 0; i < N; ++i)
+            {
+                (*this)[i] = f(i, (*this)[i]);
+            }
+        }
+
         static constexpr size_t size() { return N; }
     };
 
