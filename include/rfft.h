@@ -1,50 +1,10 @@
 #pragma once
 
 #include "fft_core.h"
+#include "view_types.h"
 
 namespace sfft
 {
-
-    template <typename T, typename CplxT>
-    struct InterleavedComplexView
-    {
-        T *_data;
-        constexpr explicit InterleavedComplexView(T *data) : _data(data) {}
-
-        struct Proxy
-        {
-            T *_ptr;
-            constexpr operator CplxT() const
-            {
-                return CplxT(_ptr[0], _ptr[1]);
-            }
-
-            constexpr Proxy &operator=(const CplxT &c)
-            {
-                _ptr[0] = c.real();
-                _ptr[1] = c.imag();
-                return *this;
-            }
-
-            constexpr Proxy &operator=(const Proxy &other)
-            {
-                if (this != &other)
-                {
-                    _ptr[0] = other._ptr[0];
-                    _ptr[1] = other._ptr[1];
-                }
-                return *this;
-            }
-
-            constexpr T real() const { return _ptr[0]; }
-            constexpr T imag() const { return _ptr[1]; }
-        };
-
-        constexpr Proxy operator[](size_t i) const
-        {
-            return Proxy{_data + 2 * i};
-        }
-    };
 
     template <typename T, typename CplxT, typename U, int N>
     class RFFT_View
