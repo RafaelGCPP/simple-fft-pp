@@ -5,17 +5,59 @@
 namespace sfft
 {
 
+    template <typename T, typename CplxT>
+    struct InterleavedComplexView
+    {
+        T *_data;
+        constexpr explicit InterleavedComplexView(T *data) : _data(data) {}
+
+        struct Proxy
+        {
+            T *_ptr;
+            constexpr operator CplxT() const
+            {
+                return CplxT(_ptr[0], _ptr[1]);
+            }
+
+            constexpr Proxy &operator=(const CplxT &c)
+            {
+                _ptr[0] = c.real();
+                _ptr[1] = c.imag();
+                return *this;
+            }
+
+            constexpr Proxy &operator=(const Proxy &other)
+            {
+                if (this != &other)
+                {
+                    _ptr[0] = other._ptr[0];
+                    _ptr[1] = other._ptr[1];
+                }
+                return *this;
+            }
+
+            constexpr T real() const { return _ptr[0]; }
+            constexpr T imag() const { return _ptr[1]; }
+        };
+
+        constexpr Proxy operator[](size_t i) const
+        {
+            return Proxy{_data + 2 * i};
+        }
+    };
+
     template <typename T, typename CplxT, typename U, int N>
     class RFFT_View
     {
 
 
         using TwidGen = TwiddleGenerator<U, N>;
-        BitReversedView<CplxT, N / 2> _buffer;
+        using ViewType = InterleavedComplexView<T, CplxT>;
+        BitReversedView<CplxT, N / 2, ViewType> _buffer;
 
 
     public:
-        RFFT_View(T *data) : _buffer(reinterpret_cast<CplxT *>(data)) {}
+        constexpr RFFT_View(T *data) : _buffer(ViewType(data)) {}
 
         auto operator[](size_t k) const
         {
@@ -35,14 +77,16 @@ namespace sfft
 
             size_t knp = N / 2 - k;
 
-            auto Ak = scale_in_half(_buffer[k] + conj(_buffer[knp]));
-            auto Bk = scale_in_half(_buffer[k] - conj(_buffer[knp]));
+            using std::conj;
+            auto Ak = scale_in_half(CplxT(_buffer[k]) + conj(CplxT(_buffer[knp])));
+            auto Bk = scale_in_half(CplxT(_buffer[k]) - conj(CplxT(_buffer[knp])));
 
             auto minus_j_Bk = CplxT(Bk.imag(), -Bk.real());
             auto W = TwidGen::twiddles[k];
 
             auto result = Ak + (minus_j_Bk * W);
 
+            using std::conj;
             return (wrap ? conj(result) : result); // If k was in the second half, return the conjugate symmetry
         }
         template <typename Func>
@@ -84,6 +128,7 @@ namespace sfft
             // Recover the symmetric/anti-symmetric parts from the spectral bins:
             // Ak = (Xk + conj(X_{N/2-k})) / 2
             // Dk = (Xk - conj(X_{N/2-k})) / 2   (this is -j*Bk*Wk, NOT Bk itself)
+            using std::conj;
             auto Ak = scale_in_half(new_Xk + conj(new_Xnk));
             auto Dk = scale_in_half(new_Xk - conj(new_Xnk));
 
@@ -108,10 +153,10 @@ namespace sfft
     class RFFT
     {
     public:
-        static auto process(T *data)
+        static constexpr auto process(T *data)
         {
-            // First reshape real input into packed complex.
-            auto cdata = reinterpret_cast<CplxT *>(data);
+            // First reshape real input into packed complex view.
+            auto cdata = InterleavedComplexView<T, CplxT>(data);
 
             using StrideGen = StridedTwiddleGenerator<TwidGen, 2>;
             auto fft = FFT<CplxT, U, N / 2, StrideGen>();
@@ -120,10 +165,10 @@ namespace sfft
             return RFFT_View<T, CplxT, U, N>(data); // Return a view for unpacked access
         }
 
-        static T *inverse(T *data)
+        static constexpr T *inverse(T *data)
         {
-            // First reshape real input into packed complex.
-            auto cdata = reinterpret_cast<CplxT *>(data);
+            // First reshape real input into packed complex view.
+            auto cdata = InterleavedComplexView<T, CplxT>(data);
 
             using StrideGen = StridedTwiddleGenerator<TwidGen, 2>;
             auto fft = FFT<CplxT, U, N / 2, StrideGen>();

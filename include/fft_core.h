@@ -71,22 +71,22 @@ namespace sfft
     /**
      * @brief Decorator that provides a linear view and an in-place commit method.
      */
-    template <typename T, size_t N>
+    template <typename T, size_t N, typename View = T *>
     class BitReversedView
     {
-        T *const _data;
+        View _data;
         static constexpr size_t _bits = std::countr_zero(N);
 
     public:
-        constexpr explicit BitReversedView(T *data) : _data(data) {}
+        constexpr explicit BitReversedView(View data) : _data(data) {}
 
         // Accessor (The "Decorator" part)
-        constexpr T &operator[](size_t index)
+        constexpr decltype(auto) operator[](size_t index)
         {
             return _data[BitReversalPermutation<N>::indices[index]];
         }
 
-        constexpr const T &operator[](size_t index) const
+        constexpr decltype(auto) operator[](size_t index) const
         {
             return _data[BitReversalPermutation<N>::indices[index]];
         }
@@ -102,7 +102,9 @@ namespace sfft
                 size_t j = BitReversalPermutation<N>::indices[i];
                 if (i < j)
                 {
-                    std::swap(_data[i], _data[j]);
+                    T temp = _data[i];
+                    _data[i] = _data[j];
+                    _data[j] = temp;
                 }
             }
         }
@@ -144,7 +146,8 @@ namespace sfft
     public:
         FFT() = default;
 
-        constexpr auto process(T *data)
+        template <typename View>
+        constexpr auto process(View data)
         {
             int stride, num_blocks;
             for (stride = N / 2, num_blocks = 1; stride >= 1; stride /= 2, num_blocks *= 2)
@@ -164,10 +167,11 @@ namespace sfft
                     }
                 }
             }
-            return BitReversedView<T, N>(data); // Return a view for bit-reversed access
+            return BitReversedView<T, N, View>(data); // Return a view for bit-reversed access
         }
 
-        constexpr auto inverse(T *data)
+        template <typename View>
+        constexpr auto inverse(View data)
         {
             int stride, num_blocks;
             for (stride = 1, num_blocks = N / 2; stride < N; stride *= 2, num_blocks /= 2)
