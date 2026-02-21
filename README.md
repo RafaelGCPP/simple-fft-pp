@@ -339,7 +339,9 @@ make
 
 ## License
 
-[Add your license here]
+[![License: AGPL-3.0-only](https://img.shields.io/badge/License-AGPL--3.0--only-blue.svg)](LICENSE)
+
+This project is licensed under the **GNU Affero General Public License v3.0 only** (AGPL-3.0-only). See the [LICENSE](LICENSE) file for the full license text.
 
 ## Contributing
 
