@@ -9,6 +9,7 @@ The library provides:
 - **Fixed-point arithmetic** — Q15, Q23, Q31 types with mixed-precision operations, no floats required at runtime
 
 > **This is not a general-purpose FFT library.** It is designed for scenarios where the FFT size is known at compile time and the priority is deterministic, allocation-free execution on resource-constrained hardware.
+> **It is imperative to use heavy optimization when compiling.** As usual in C++ using templates and metraprogramming, performance is highly dependent on how the compiler rewrite the code at compile time.
 
 ## Features
 
